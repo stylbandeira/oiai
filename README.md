@@ -1,66 +1,36 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Proposta de Criação de MVP do app Óiaí
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+O Óiaí tem a intensão de se tornar um aplicativo para pesquisa de preços iterativo de grupo de pessoas; com intuito de facilitar e tornar mais baratas o ato de comprar insumos para pessoas comuns.
 
-## About Laravel
+## O que deve ser feito:
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+O aplicativo deve permitir o registro e login de usuários de dois tipos: admin e usuário comum. Um usuário sem login não pode utilizar o app.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+O aplicativo deve permitir que um usuário pesquise, em sua região ou numa região escolhida que pode variar entre 1 e 50km² os valores dos itens que ele selecionou em uma lista prévia. Os valores destes itens devem poder ser inseridos tanto automaticamente usando o site e a API do SEFAZ, fazendo leitura do código de uma nota fiscal ou do QRCode da mesma. Cada usuário e item adicionado devem possuir uma combinação de confiança que leva em conta a data de atualização deste item bem como a assertividade dos valores.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Ao finalizar a lista de compras, os itens não-marcados terão sua assertividade reduzida e, caso o usuário insira uma nova nota fiscal, os itens devem atualizar seus valores e assertividade.
 
-## Learning Laravel
+O usuário deve poder analisar um item da lista para marcar o mesmo como valor errado, inserindo um valor novo; caso isso aconteça e outro usuário em menos de 24hrs insira uma nota fiscal com o valor anteriormente informado, este usuário que marcou o valor como errado deve ter sua confiança reduzida.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+O app deve permitir dois tipos de lista: uma lista por estabelecimento e uma lista otimizada, que calculará os valores dos itens mais baratos e onde comprá-los, criando uma rota para o usuário fazer a feira em diversos estabelecimentos (a quantidade de estabelecimentos máxima deve ser 10 por padrão, mas o usuário deve ter a possibilidade de escolher outro valor a partir de 2) . Na tela onde são mostrados os estabelecimentos por onde o usuário terá que visitar, deve ser possível levar qualquer um deles para a lixeira, ao que os itens daquele estabelecimento serão redistribuídos para os estabelecimentos mais baratos dentro daqueles que sobraram.
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+A cor dos estabelecimentos devem ir de vermelho para verde de acordo com a quantidade de confiabilidade dos valores deles.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 2000 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### Escala de Confiabilidade:
 
-## Laravel Sponsors
+A escala de compatibilidade deve ser baseada em alguns fatores:
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+- Cliente
+    - Assertividade dos preços das últimas 24 horas
+    - Cadastro de notas fiscais
+    - Inclusão e assertividade de até 90% nos valores de preços sem notas fiscais
+    - Inclusão de novos estabelecimentos
+- Empresa
+    - Assertividade dos preços das últimas 24 horas
+    - Quantidade de notas fiscais cadastradas nos últimos dias
+    - Assertividade das notas fiscais cadastradas
+    - Assertividade dos clientes que cadastram (notas ou preços)
 
-### Premium Partners
+### Database
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+https://drawsql.app/teams/styl-1/diagrams/oiai
