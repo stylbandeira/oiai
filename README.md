@@ -34,3 +34,8 @@ A escala de compatibilidade deve ser baseada em alguns fatores:
 ### Database
 
 https://drawsql.app/teams/styl-1/diagrams/oiai
+
+
+
+## Ações e Instalações
+npm install lucide-react

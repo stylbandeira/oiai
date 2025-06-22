@@ -7,21 +7,12 @@ services:
       dockerfile: Dockerfile
     container_name: oiai-app
     ports:
-    #   - "8001:8000"
       - "8001:80"
       - "5173:5173"
     volumes:
       - ./:/var/www/html
     working_dir: /var/www/html
-
-    ## APAGAR NA PRIMEIRA VEZ QUE RODA (?)
-    # command: sh -c "php artisan serve --host=0.0.0.0 --port=8000"
-    ## APAGAR NA PRIMEIRA VEZ QUE RODA (?)
-
-    ## É PRA RODAR O NPM AUTOMATICAMENTE MAS APARENTEMENTE NÃO FUNCIONA MAIS (?)
-    # command: sh -c "php artisan serve --host=0.0.0.0 --port=8000 & npm run dev --port 5173"
-    ## É PRA RODAR O NPM AUTOMATICAMENTE MAS APARENTEMENTE NÃO FUNCIONA MAIS (?)
-
+    command: sh -c "npm run dev & apache2-foreground"
     environment:
       - APACHE_RUN_USER=www-data
       - APACHE_RUN_GROUP=www-data

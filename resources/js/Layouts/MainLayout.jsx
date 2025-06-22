@@ -12,8 +12,6 @@ export default function GuestLayout({ children }) {
             {user && user.type === 'client' && <ClientHeader />}
             {user && user.type === 'admin' && <AdminHeader />}
 
-            {/* <GuestHeader></GuestHeader> */}
-
             <main className="flex-1 container p-4">
                 {children}
             </main>

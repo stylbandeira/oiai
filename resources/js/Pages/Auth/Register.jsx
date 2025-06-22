@@ -5,11 +5,13 @@ import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import { Head, Link, useForm } from '@inertiajs/react';
+import Dropdown from '@/Components/MainComponents/Dropdown';
 
 export default function Register() {
     const { data, setData, post, processing, errors, reset } = useForm({
         name: '',
         email: '',
+        type: '',
         password: '',
         password_confirmation: '',
     });
@@ -64,6 +66,21 @@ export default function Register() {
                         autoComplete="username"
                         onChange={handleOnChange}
                         required
+                    />
+
+                    <InputError message={errors.email} className="mt-2" />
+                </div>
+
+                <div className="mt-4">
+                    <Dropdown
+                        label='Tipo de Usuário'
+                        name="type"
+                        value={data.type}
+                        onChange={(e) => setData('type', e.target.value)}
+                        options={[
+                            { value: 'cliente', label: 'Cliente' },
+                            { value: 'admin', label: 'Administrador' },
+                        ]}
                     />
 
                     <InputError message={errors.email} className="mt-2" />

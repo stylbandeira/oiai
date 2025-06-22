@@ -4,6 +4,10 @@ import '../css/app.css';
 import { createRoot } from 'react-dom/client';
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap/dist/js/bootstrap.bundle.min.js'; // para funcionamento do menu colapsável
+
+
 
 const appName = window.document.getElementsByTagName('title')[0]?.innerText || 'Laravel';
 
