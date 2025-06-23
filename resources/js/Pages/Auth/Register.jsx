@@ -78,7 +78,7 @@ export default function Register() {
                         value={data.type}
                         onChange={(e) => setData('type', e.target.value)}
                         options={[
-                            { value: 'cliente', label: 'Cliente' },
+                            { value: 'client', label: 'Cliente' },
                             { value: 'admin', label: 'Administrador' },
                         ]}
                     />
