@@ -1,6 +1,7 @@
 import ApplicationLogo from '@/Components/ApplicationLogo';
 import { GuestHeader, ClientHeader, AdminHeader } from '@/Components/Header';
 import { GuestFooter, ClientFooter, AdminFooter } from '@/Components/MainComponents/Footer';
+import { DefaultMainContent } from '@/Components/MainComponents/MainContent';
 import { Link, usePage } from '@inertiajs/react';
 
 export default function GuestLayout({ children }) {
@@ -13,9 +14,7 @@ export default function GuestLayout({ children }) {
             {user && user.type === 'client' && <ClientHeader />}
             {user && user.type === 'admin' && <AdminHeader />}
 
-            <main className="flex-1 container p-4 main-content">
-                {children}
-            </main>
+            <DefaultMainContent children={children} />
 
             {!user && <GuestFooter />}
             {user && user.type === 'client' && <ClientFooter />}

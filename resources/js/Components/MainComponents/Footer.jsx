@@ -2,10 +2,6 @@ import { Link } from "@inertiajs/react";
 import { LogOut } from 'lucide-react';
 
 export function GuestFooter() {
-    const handleLogout = () => {
-        router.post('/logout');
-    };
-
     return (
         <>
             <div className="main-footer">
