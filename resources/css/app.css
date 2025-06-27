@@ -19,3 +19,10 @@ body {
     padding: 40px 20px;
     color: var(--text-secondary);
 }
+
+.mail-card {
+    padding: 2em;
+    margin: 1em;
+    border-radius: 1em;
+    background: var(--background-terciary);
+}
