@@ -13,6 +13,8 @@ module.exports = {
         extend: {
             fontFamily: {
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                ubuntu: ['Ubuntu', 'sans-serif'],
+                primary: ['var(--font-primary)']
             },
         },
     },

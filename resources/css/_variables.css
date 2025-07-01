@@ -1,4 +1,5 @@
 :root {
+    /* COLORS */
     --background-primary: #FFFFFF;
     --background-secondary: #2D9CDB;
     --background-terciary: #E0E0E0;
@@ -14,4 +15,7 @@
     --text-secondary: #E0E0E0;
     --input-txt-primary: #505050;
     --input-txt-secondary: #AEAEAE;
+
+    /* FONTS */
+    --font-primary: 'Ubuntu', sans-serif;
 }

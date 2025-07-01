@@ -15,7 +15,7 @@ export function GuestHeader() {
                 </div>
                 <div>
                     <div className="navbar-collapse" id="navbarNav">
-                        <ul className="navbar-nav">
+                        <ul className="navbar-nav font-primary">
                             <li className="nav-item">
                                 <a className="nav-link" href="/login">Login</a>
                             </li>
@@ -40,7 +40,7 @@ export function ClientHeader() {
                 </div>
                 <div>
                     <div className="navbar-collapse" id="navbarNav">
-                        <ul className="navbar-nav">
+                        <ul className="navbar-nav font-primary">
 
                             <li className="nav-item">
                                 <a className="nav-link" href="/listas">Perfil</a>
@@ -70,7 +70,7 @@ export function AdminHeader() {
                 </div>
                 <div>
                     <div className="navbar-collapse" id="navbarNav">
-                        <ul className="navbar-nav">
+                        <ul className="navbar-nav font-primary">
                             <li className="nav-item">
                                 <a className="nav-link" href="/empresas">Empresas</a>
                             </li>

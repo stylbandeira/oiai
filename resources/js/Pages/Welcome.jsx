@@ -14,7 +14,8 @@ export default function Welcome(props) {
             <div className="mail">
                 <div className="mail-card">
                     <h1>Olá, Fulano</h1>
-                    <p>Clique no botão abaixo para redefinir sua senha:</p>
+                    <p className='font-ubuntu font-italic'>Clique no botão abaixo para redefinir sua senha:</p>
+
                     <a href='/'
                         className="btn btn-success">
                         Redefinir Senha
