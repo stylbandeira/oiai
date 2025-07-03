@@ -4,8 +4,12 @@ import ApplicationLogo from '@/Components/ApplicationLogo';
 import { FaUser } from 'react-icons/fa';
 import CompanyForm from '@/Components/MainComponents/Company/CompanyForm';
 import ProductForm from '@/Components/MainComponents/Product/ProductForm';
+import DataTable from '@/Components/MainComponents/DataTable';
 
 export default function Welcome(props) {
+    const empresas = {
+        data: []
+    };
     return (
         <>
             <div className="flex justify-content-center">
@@ -13,25 +17,19 @@ export default function Welcome(props) {
                     <img className="object-contain h-32" src="/storage/img/primary-logo.png" alt="Logo" />
                 </a>
             </div>
-            <div className="mail">
-                <div className="mail-card">
-                    <h1>Olá, Fulano</h1>
-                    <p className='font-ubuntu font-italic'>Clique no botão abaixo para redefinir sua senha:</p>
 
-                    <a href='/'
-                        className="btn btn-success">
-                        Redefinir Senha
-                    </a>
-
-                    <hr />
-
-                    <div className="align-self-middle">
-                        <p>Se você não solicitou isso, ignore este e-mail</p>
-                    </div>
-                </div>
+            <h1>Empresas</h1>
+            <div className="container p-2">
+                <DataTable
+                    baseRoute="/empresas"
+                    columns={[
+                        { key: 'nome', label: 'Nome' },
+                        { key: 'cnpj', label: 'CNPJ' },
+                        { key: 'email', label: 'Email' },
+                    ]}
+                    data={empresas.data}
+                />
             </div>
-
-            <ProductForm></ProductForm>
         </>
     );
 }
