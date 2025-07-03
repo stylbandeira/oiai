@@ -16,6 +16,11 @@ module.exports = {
                 ubuntu: ['Ubuntu', 'sans-serif'],
                 primary: ['var(--font-primary)']
             },
+            colors: {
+                primary: 'var(--color-primary)',
+                secondary: 'var(--color-secondary)',
+                background: 'var(--color-background)',
+            }
         },
     },
 

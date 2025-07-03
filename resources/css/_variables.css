@@ -1,5 +1,9 @@
 :root {
     /* COLORS */
+    --color-primary: #DCB745;
+    --color-secondary: #2D9CDB;
+    --color-background: #f0f0f0;
+
     --background-primary: #FFFFFF;
     --background-secondary: #2D9CDB;
     --background-terciary: #E0E0E0;
