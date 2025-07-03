@@ -2,6 +2,7 @@ import { Link, Head } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
 import ApplicationLogo from '@/Components/ApplicationLogo';
 import { FaUser } from 'react-icons/fa';
+import CompanyForm from '@/Components/MainComponents/Company/CompanyForm';
 
 export default function Welcome(props) {
     return (
@@ -28,6 +29,8 @@ export default function Welcome(props) {
                     </div>
                 </div>
             </div>
+
+            <CompanyForm></CompanyForm>
         </>
     );
 }
