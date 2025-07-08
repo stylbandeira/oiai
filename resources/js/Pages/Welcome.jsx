@@ -5,11 +5,16 @@ import { FaUser } from 'react-icons/fa';
 import CompanyForm from '@/Components/MainComponents/Company/CompanyForm';
 import ProductForm from '@/Components/MainComponents/Product/ProductForm';
 import DataTable from '@/Components/MainComponents/DataTable';
+import PrimaryButton from '@/Components/Buttons/PrimaryButton';
 
 export default function Welcome(props) {
     const empresas = {
         data: []
     };
+
+    const handleClick = () => {
+        console.log('Botão');
+    }
     return (
         <>
             <div className="flex justify-content-center">
@@ -20,15 +25,30 @@ export default function Welcome(props) {
 
             <h1>Empresas</h1>
             <div className="container p-2">
-                <DataTable
-                    baseRoute="/empresas"
-                    columns={[
-                        { key: 'nome', label: 'Nome' },
-                        { key: 'cnpj', label: 'CNPJ' },
-                        { key: 'email', label: 'Email' },
-                    ]}
-                    data={empresas.data}
-                />
+
+                <div className="col">
+                    <div className="col-md-6">
+                        <div className="row">
+                            <PrimaryButton onClick={handleClick} variant="default">
+                                Default
+                            </PrimaryButton>
+                        </div>
+
+                        <div className="row mt-2">
+                            <PrimaryButton onClick={handleClick} variant="clean">
+                                Default
+                            </PrimaryButton>
+                        </div>
+                    </div>
+                    <div className="col-md-6">
+                        <div className="row mt-2">
+                            <PrimaryButton onClick={handleClick} variant="disabled">
+                                Default
+                            </PrimaryButton>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </>
     );
