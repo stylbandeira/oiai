@@ -1,5 +1,6 @@
 import MainLayout from '@/Layouts/MainLayout';
 import PrimaryButton from '@/Components/Buttons/PrimaryButton';
+import IconButton from '@/Components/Buttons/IconButton';
 
 export default function Welcome(props) {
     const empresas = {
@@ -20,28 +21,10 @@ export default function Welcome(props) {
             <h1>Empresas</h1>
             <div className="container p-2">
 
-                <div className="col">
-                    <div className="col-md-6">
-                        <div className="row">
-                            <PrimaryButton onClick={handleClick} variant="default">
-                                Default
-                            </PrimaryButton>
-                        </div>
+                <IconButton variant="add" />
+                <IconButton variant="remove" />
+                <IconButton variant="disabled" />
 
-                        <div className="row mt-2">
-                            <PrimaryButton onClick={handleClick} variant="clean">
-                                Default
-                            </PrimaryButton>
-                        </div>
-                    </div>
-                    <div className="col-md-6">
-                        <div className="row mt-2">
-                            <PrimaryButton onClick={handleClick} variant="disabled">
-                                Default
-                            </PrimaryButton>
-                        </div>
-                    </div>
-                </div>
 
             </div>
         </>
