@@ -1,10 +1,4 @@
-import { Link, Head } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
-import ApplicationLogo from '@/Components/ApplicationLogo';
-import { FaUser } from 'react-icons/fa';
-import CompanyForm from '@/Components/MainComponents/Company/CompanyForm';
-import ProductForm from '@/Components/MainComponents/Product/ProductForm';
-import DataTable from '@/Components/MainComponents/DataTable';
 import PrimaryButton from '@/Components/Buttons/PrimaryButton';
 
 export default function Welcome(props) {
