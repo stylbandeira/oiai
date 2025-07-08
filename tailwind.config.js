@@ -17,9 +17,11 @@ module.exports = {
                 primary: ['var(--font-primary)']
             },
             colors: {
-                primary: 'var(--color-primary)',
-                secondary: 'var(--color-secondary)',
+                first: 'var(--color-primary)',
+                second: 'var(--color-secondary)',
                 background: 'var(--color-background)',
+                light: 'var(--color-light)',
+                dark: 'var(--color-dark)',
             }
         },
     },

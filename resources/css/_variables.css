@@ -1,8 +1,11 @@
 :root {
     /* COLORS */
-    --color-primary: #DCB745;
+    --color-primary: #f2c94c;
     --color-secondary: #2D9CDB;
     --color-background: #f0f0f0;
+    --color-light: #fdfdfd;
+    --color-dark: #1d1d1d;
+    --color-transparent: rgba(0, 0, 0, 0);
 
     --background-primary: #FFFFFF;
     --background-secondary: #2D9CDB;
@@ -10,7 +13,7 @@
     --icon-primary: #FFFFFF;
     --icon-secondary: #000000;
     --icon-inactive: #888888;
-    --button-bg-primary: #DCB745;
+    --button-bg-primary: #f2c94c;
     --button-bg-inactive: #666666;
     --button-label-primary: #505050;
     --button-bg-add: #298EC7;
