@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -25,6 +26,11 @@ Route::get('/', function () {
         'phpVersion' => PHP_VERSION,
     ]);
 });
+
+// Route::get('/company', [CompanyController::class, 'create']);
+
+Route::resource('company', CompanyController::class);
+Route::resource('address', CompanyController::class);
 
 Route::get('/logout', [AuthenticatedSessionController::class, 'destroy']);
 

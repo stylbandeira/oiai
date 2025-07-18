@@ -5,9 +5,55 @@ export default function FormWrapper({ model = {}, fields, onSubmit }) {
         ...model,
     });
 
+    const getNestedValue = (obj, path) => {
+        const result = path.split('.').reduce((acc, part) => acc?.[part], obj);
+        return typeof result === 'object' ? '' : result ?? '';
+    };
+
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setData(name, value);
+
+        if (name.includes('.')) {
+            const keys = name.split('.');
+            setData((prevData) => {
+                const updated = { ...prevData };
+                let current = updated;
+
+                for (let i = 0; i < keys.length - 1; i++) {
+                    if (!current[keys[i]] || typeof current[keys[i]] !== 'object') {
+                        current[keys[i]] = {};
+                    }
+                    current = current[keys[i]];
+                }
+
+                current[keys[keys.length - 1]] = value;
+                return updated;
+            });
+        } else {
+            setData(name, value);
+        }
+    };
+
+    const handleChangeFile = (e, name) => {
+        const file = e.target.files[0];
+
+        if (name.includes('.')) {
+            const keys = name.split('.');
+            setData((prevData) => {
+                const updated = { ...prevData };
+                let current = updated;
+
+                for (let i = 0; i < keys.length - 1; i++) {
+                    if (!current[keys[i]]) current[keys[i]] = {};
+                    current = current[keys[i]];
+                }
+
+                current[keys[keys.length - 1]] = file;
+                return updated;
+            });
+        } else {
+            setData(name, file);
+        }
     };
 
     const submit = (e) => {
@@ -23,14 +69,25 @@ export default function FormWrapper({ model = {}, fields, onSubmit }) {
                         <label htmlFor={field.name} className="block font-semibold mb-1">
                             {field.label}
                         </label>
-                        <input
-                            id={field.name}
-                            name={field.name}
-                            type={field.type || 'text'}
-                            value={data[field.name] || ''}
-                            onChange={handleChange}
-                            className="border rounded w-full p-2"
-                        />
+                        {field.type === 'image' ? (
+                            <input
+                                id={field.name}
+                                name={field.name}
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => handleChangeFile(e, field.name)}
+                                className="border rounded w-full p-2"
+                            />
+                        ) : (
+                            < input
+                                id={field.name}
+                                name={field.name}
+                                type={field.type || 'text'}
+                                value={getNestedValue(data, field.name)}
+                                onChange={handleChange}
+                                className="border rounded w-full p-2"
+                            />
+                        )}
                         {errors[field.name] && (
                             <p className="text-red-500 text-sm mt-1">{errors[field.name]}</p>
                         )}

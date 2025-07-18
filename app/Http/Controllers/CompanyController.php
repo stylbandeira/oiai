@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Address;
 use App\Models\Company;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Inertia\Inertia;
 
 class CompanyController extends Controller
 {
@@ -25,7 +28,8 @@ class CompanyController extends Controller
      */
     public function create()
     {
-        //
+        // Inertia::render('Welcome', []);
+        return Inertia::render('Company/CreateCompany', []);
     }
 
     /**
@@ -37,16 +41,37 @@ class CompanyController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'address_id' => 'required|exists:address,id',
-            'name' => 'required|string',
-            'cnpj' => 'required|string',
-            'img' => 'required|string',
+            'company.name' => 'required|string',
+            'company.cnpj' => 'required|string',
+            'company.img' => 'required|image',
+
+            'address.country' => 'required|string',
+            'address.area' => 'required|string',
+            'address.city' => 'required|string',
+            'address.street' => 'required|string',
+            'address.number' => 'required|string',
+            'address.complement' => 'string',
         ]);
 
         if ($validator->fails()) {
             return response([
                 'errors' => $validator->errors()
             ], 400);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $address = Address::create($request->address);
+            $companyData = $request->company;
+            $companyData['address_id'] = $address->id;
+            $company = Company::create($companyData);
+
+            dd('Entrou no try');
+
+            DB::commit();
+        } catch (\Throwable $th) {
+            dd('Entrou no catch');
         }
 
         $company = Company::create($request->all());
