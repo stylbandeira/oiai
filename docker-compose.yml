@@ -50,5 +50,21 @@ services:
     depends_on:
       - db
 
+  react:
+    build:
+      context: ../oiai-front
+      dockerfile: Dockerfile
+    container_name: oiai-front
+    ports:
+      - "8081:3000"
+    volumes:
+      - ./oiai-front:/app
+    working_dir: /app
+    stdin_open: true
+    tty: true
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+
+
 volumes:
   dbdata:
