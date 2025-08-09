@@ -40,21 +40,23 @@ class VerifyEmailNotification extends Notification
 
         return (new MailMessage)
             ->subject('Verifique seu endereço de e-mail')
-            ->view('emails.verify-email-address', [
-                'url' => $verificationUrl,
-                'appName' => env('APP_NAME')
-            ]);
+            ->line('Clique no botão abaixo para verificar seu endereço de e-mail.')
+            ->action('Verificar E-mail', $verificationUrl)
+            ->line('Se você não criou uma conta, ignore este e-mail.');
     }
 
     protected function verificationUrl($notifiable)
     {
-        return URL::temporarySignedRoute(
-            'verification.verify',
-            Carbon::now()->addMinutes(60),
+        $temporarySignedURL = URL::temporarySignedRoute(
+            'verification.verify', // Isso ainda usa o backend Laravel
+            now()->addMinutes(60),
             [
                 'id' => $notifiable->getKey(),
                 'hash' => sha1($notifiable->getEmailForVerification()),
             ]
         );
+
+        // Substitua a URL do backend pela do frontend
+        return str_replace(config('app.url'), env('FRONTEND_URL'), $temporarySignedURL);
     }
 }
