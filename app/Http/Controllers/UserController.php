@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
 
@@ -28,42 +30,6 @@ class UserController extends Controller
     public function create()
     {
         //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
-        $validation = Validator::make($request->all(), [
-            'email' => 'required|email|unique:users,email',
-            'name' => 'required|string',
-            'password' => ['required', 'confirmed', Password::min(8)],
-            'user_type' => 'required|string',
-        ]);
-
-        if ($validation->fails()) {
-            return response([
-                'errors' => $validation->errors()
-            ], 300);
-        }
-
-        $hashedPassword = Hash::make($request->password);
-
-        $user = User::create([
-            'type' => $request->user_type,
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => $hashedPassword,
-        ]);
-
-        return response([
-            'message' => 'Dados',
-            'dados' => $user
-        ]);
     }
 
     /**
