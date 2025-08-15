@@ -25,9 +25,6 @@ class AuthController extends Controller
     {
         $user = User::findOrFail($id);
 
-        // Laravel usa diretamente o método getEmailForVerification()
-        // sem trim, sem lowercase — apenas conversão para string
-        Log::alert("aaaaaa");
         $expectedHash = sha1($user->getEmailForVerification());
 
         if (! hash_equals($expectedHash, $hash)) {
@@ -38,10 +35,11 @@ class AuthController extends Controller
         if (! $user->hasVerifiedEmail()) {
             $user->markEmailAsVerified();
             event(new Verified($user));
-            Log::info("Email verificado para usuário ID {$user->id}");
         }
 
-        return redirect(config('app.frontend_url') . '/email-confirmed');
+        return response([
+            'message' => 'success'
+        ]);
     }
 
     public function login(Request $request)
