@@ -47,16 +47,21 @@ class VerifyEmailNotification extends Notification
 
     protected function verificationUrl($notifiable)
     {
-        $temporarySignedURL = URL::temporarySignedRoute(
-            'verification.verify', // Isso ainda usa o backend Laravel
-            now()->addMinutes(60),
+        $frontendUrl = env('FRONTEND_URL') . '/verify-email';
+
+        $verifyUrl = URL::temporarySignedRoute(
+            'api.verification.verify',
+            Carbon::now()->addMinutes(60),
             [
                 'id' => $notifiable->getKey(),
                 'hash' => sha1($notifiable->getEmailForVerification()),
             ]
         );
 
-        // Substitua a URL do backend pela do frontend
-        return str_replace(config('app.url'), env('FRONTEND_URL'), $temporarySignedURL);
+        $query = http_build_query([
+            'signed_url' => $verifyUrl,
+        ]);
+
+        return "{$frontendUrl}?{$query}";
     }
 }
