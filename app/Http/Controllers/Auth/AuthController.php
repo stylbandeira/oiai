@@ -47,9 +47,18 @@ class AuthController extends Controller
         $request->validate([
             'email' => 'required|string|exists:users,email',
             'password' => 'required|string',
+            'user_type' => 'required|string'
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $user = User::where('email', $request->email)
+            ->where('type', $request->user_type)
+            ->first();
+
+        if (!Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'message' => 'Credenciais inválidas'
+            ], 401);
+        }
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
