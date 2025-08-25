@@ -19,10 +19,8 @@ use Illuminate\Support\Facades\Route;
 
 // Rotas públicas
 Route::post('/register', [AuthController::class, 'register']);
-// ->middleware(['auth:sanctum']);
 
-Route::post('/login', [AuthController::class, 'login'])
-    ->middleware(['auth:sanctum']);
+Route::post('/login', [AuthController::class, 'login']);
 
 // Rotas de verificação de email
 Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
