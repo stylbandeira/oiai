@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
@@ -21,6 +22,9 @@ use Illuminate\Support\Facades\Route;
 Route::post('/register', [AuthController::class, 'register']);
 
 Route::post('/login', [AuthController::class, 'login']);
+
+//Rotas admin
+Route::middleware('auth:sanctum')->get('admin/dashboard', [AdminController::class, 'dashboard']);
 
 // Rotas de verificação de email
 Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
