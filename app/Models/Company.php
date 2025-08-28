@@ -16,4 +16,9 @@ class Company extends Model
         'cnpj',
         'img'
     ];
+
+    public function products()
+    {
+        return $this->hasMany(CompanyProducts::class, 'product_id');
+    }
 }
