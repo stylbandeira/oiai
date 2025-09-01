@@ -28,6 +28,10 @@ class User extends Authenticatable
         'type'
     ];
 
+    protected $attributes = [
+        'cpf' => null
+    ];
+
     /**
      * The attributes that should be hidden for serialization.
      *
