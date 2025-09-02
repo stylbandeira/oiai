@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -23,8 +24,17 @@ Route::post('/register', [AuthController::class, 'register']);
 
 Route::post('/login', [AuthController::class, 'login']);
 
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::prefix('admin')->group(function () {
+        Route::get('/dashboard', [AdminController::class, 'dashboard']);
+        Route::apiResource('/companies', CompanyController::class);
+    });
+});
 //Rotas admin
-Route::middleware('auth:sanctum')->get('admin/dashboard', [AdminController::class, 'dashboard']);
+// Route::middleware('auth:sanctum')->get('admin/dashboard', [AdminController::class, 'dashboard']);
+// Route::post('admin/companies', [AdminController::class, 'store']);
+
 
 // Rotas de verificação de email
 Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])

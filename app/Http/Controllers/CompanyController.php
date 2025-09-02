@@ -6,6 +6,7 @@ use App\Models\Address;
 use App\Models\Company;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 
@@ -41,16 +42,15 @@ class CompanyController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'company.name' => 'required|string',
-            'company.cnpj' => 'required|string',
-            'company.img' => 'required|image',
-
-            'address.country' => 'required|string',
-            'address.area' => 'required|string',
-            'address.city' => 'required|string',
-            'address.street' => 'required|string',
-            'address.number' => 'required|string',
-            'address.complement' => 'string',
+            'name' => 'required|string',
+            'cnpj' => 'required|string|unique:company,cnpj',
+            'img' => 'image',
+            'site' => 'string',
+            'email' => 'string|email',
+            'status' => 'string',
+            'phone' => 'string',
+            'description' => 'string',
+            'raw_address' => 'string',
         ]);
 
         if ($validator->fails()) {
@@ -59,19 +59,8 @@ class CompanyController extends Controller
             ], 400);
         }
 
-        DB::beginTransaction();
-
-        try {
-            $address = Address::create($request->address);
-            $companyData = $request->company;
-            $companyData['address_id'] = $address->id;
-            $company = Company::create($companyData);
-
-            dd('Entrou no try');
-
-            DB::commit();
-        } catch (\Throwable $th) {
-            dd('Entrou no catch');
+        if ($request->hasFile('img')) {
+            $request['img'] = $request->file('img')->store('companies/images', 'public');
         }
 
         $company = Company::create($request->all());

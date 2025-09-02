@@ -14,7 +14,16 @@ class Company extends Model
         'address_id',
         'name',
         'cnpj',
-        'img'
+        'img',
+        'site',
+        'email',
+        'status',
+        'phone',
+        'description',
+        'raw_address'
+    ];
+    protected $attributes = [
+        'img' => './'
     ];
 
     public function products()
