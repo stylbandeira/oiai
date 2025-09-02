@@ -28,6 +28,12 @@ class Company extends Model
 
     public function products()
     {
-        return $this->hasMany(CompanyProducts::class, 'product_id');
+        return $this->belongsToMany(Product::class, 'company_products')
+            ->withPivot(['average_price']);
+    }
+
+    public function owners()
+    {
+        return $this->belongsToMany(User::class, 'company_owners', 'company_id', 'user_id');
     }
 }

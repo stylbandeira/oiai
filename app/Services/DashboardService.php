@@ -41,14 +41,19 @@ class DashboardService
     public function getTopMentionedProducts(): array
     {
         $top_mentioned_products = Product::withCount(['userAddedProducts as registrations'])->get();
+        $products = [];
 
         if (count($top_mentioned_products)) {
-            return [
-                'id' => $top_mentioned_products->id,
-                'name' => $top_mentioned_products->name,
-                'registrations' => $top_mentioned_products->registrations,
-            ];
+            foreach ($top_mentioned_products as $product) {
+                $products[] = [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'registrations' => $product->registrations,
+                ];
+            }
         }
+
+        Log::alert($products);
 
         return [];
     }

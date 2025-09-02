@@ -2,24 +2,64 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Address;
+use App\Http\Resources\AdminCompanyResource;
+use App\Http\Resources\ClientCompanyResource;
+use App\Http\Resources\CompanyResource;
 use App\Models\Company;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 
 class CompanyController extends Controller
 {
+    public function __construct()
+    {
+        $this->authorizeResource(Company::class, 'company');
+    }
+
     /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        $query = Company::query();
+
+        if ($request->user()->type === 'company') {
+            $query->whereHas('owners', function ($q) use ($request) {
+                $q->where('user_id', $request->user()->id);
+            });
+        }
+
+        Log::info($request->all());
+
+        if ($request->user()->type === 'admin') {
+
+            //TO-DO - QUERO DEIXAR ISSO MAIS AUTOMÁTICO
+            if ($request->has('status')) {
+                $query->where('status', $request->status);
+            }
+
+            if ($request->has('plan')) {
+                $query->where('plan', $request->plan);
+            }
+        }
+
+        $companies = $query->with(['owners', 'products'])
+            ->withCount('products')
+            ->paginate(10);
+
+        if ($request->user()->type === 'admin') {
+            return AdminCompanyResource::collection($companies);
+        }
+
+        if ($request->user()->type === 'company') {
+            return CompanyResource::collection($companies);
+        }
+
+        return ClientCompanyResource::collection($companies);
     }
 
     /**
