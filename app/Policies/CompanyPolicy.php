@@ -64,7 +64,9 @@ class CompanyPolicy
      */
     public function update(User $user, Company $company)
     {
-        //
+        if ($user->type === 'admin') {
+            return true;
+        }
     }
 
     /**

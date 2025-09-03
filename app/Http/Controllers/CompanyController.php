@@ -7,7 +7,9 @@ use App\Http\Resources\ClientCompanyResource;
 use App\Http\Resources\CompanyResource;
 use App\Models\Company;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 
@@ -85,7 +87,7 @@ class CompanyController extends Controller
             'name' => 'required|string',
             'cnpj' => 'required|string|unique:company,cnpj',
             'img' => 'image',
-            'site' => 'string',
+            'website' => 'string',
             'email' => 'string|email',
             'status' => 'string',
             'phone' => 'string',
@@ -99,11 +101,14 @@ class CompanyController extends Controller
             ], 400);
         }
 
+        $validatedData = $request->all();
+
         if ($request->hasFile('img')) {
-            $request['img'] = $request->file('img')->store('companies/images', 'public');
+            $imgPath = $request->file('img')->store('companies/images', 'public');
+            $validatedData['img'] = $imgPath;
         }
 
-        $company = Company::create($request->all());
+        $company = Company::create($validatedData);
 
         return response([
             'company' => $company
@@ -111,14 +116,26 @@ class CompanyController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Display the specified company.
      *
      * @param  \App\Models\Company  $company
      * @return \Illuminate\Http\Response
      */
     public function show(Company $company)
     {
-        //
+        $user = Auth::user();
+
+        if ($user->type === 'admin') {
+            return new AdminCompanyResource($company);
+        }
+
+        if ($user->type === 'company') {
+            return new CompanyResource($company);
+        }
+
+        return new ClientCompanyResource($company);
+
+        return response($company);
     }
 
     /**

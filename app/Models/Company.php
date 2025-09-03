@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class Company extends Model
 {
@@ -15,7 +16,7 @@ class Company extends Model
         'name',
         'cnpj',
         'img',
-        'site',
+        'website',
         'email',
         'status',
         'phone',
@@ -35,5 +36,14 @@ class Company extends Model
     public function owners()
     {
         return $this->belongsToMany(User::class, 'company_owners', 'company_id', 'user_id');
+    }
+
+    public function getImgUrlAttribute()
+    {
+        if (!$this->img) {
+            return null;
+        }
+
+        return Storage::url($this->img);
     }
 }

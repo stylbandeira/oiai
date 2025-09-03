@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 class AdminCompanyResource extends JsonResource
 {
@@ -19,8 +20,8 @@ class AdminCompanyResource extends JsonResource
             'name' => $this->name,
             'email' => $this->email,
             'cnpj' => $this->cnpj,
-            'img' => $this->img,
-            'site' => $this->site,
+            'img' => $this->img ? config('app.url') . $this->img_url : null,
+            'website' => $this->website,
             'status' => $this->status,
             'phone' => $this->phone,
             'description' => $this->description,

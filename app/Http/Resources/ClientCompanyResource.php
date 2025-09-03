@@ -19,7 +19,7 @@ class ClientCompanyResource extends JsonResource
             'name' => $this->name,
             'email' => $this->email,
             'img' => $this->img,
-            'site' => $this->site,
+            'website' => $this->website,
             'status' => $this->status,
             'phone' => $this->phone,
             'description' => $this->description,
