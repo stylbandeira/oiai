@@ -29,11 +29,26 @@ class CompanyController extends Controller
     {
         $query = Company::query();
 
+        if ($request->has('search') && !empty($request->search)) {
+            $searchTerm = '%' . $request->search . '%';
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('name', 'like', $searchTerm)
+                    ->orWhere('email', 'like', $searchTerm)
+                    ->orWhere('cnpj', 'like', $searchTerm);
+            });
+        }
+
+        if ($request->has('status') && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
+
         if ($request->user()->type === 'company') {
             $query->whereHas('owners', function ($q) use ($request) {
                 $q->where('user_id', $request->user()->id);
             });
         }
+
+        $perPage = $request->per_page ?? 10;
 
         Log::info($request->all());
 
@@ -51,7 +66,7 @@ class CompanyController extends Controller
 
         $companies = $query->with(['owners', 'products'])
             ->withCount('products')
-            ->paginate(10);
+            ->paginate($perPage);
 
         if ($request->user()->type === 'admin') {
             return AdminCompanyResource::collection($companies);
