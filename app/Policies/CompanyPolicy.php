@@ -78,7 +78,9 @@ class CompanyPolicy
      */
     public function delete(User $user, Company $company)
     {
-        //
+        if ($user->type === 'admin') {
+            return true;
+        }
     }
 
     /**

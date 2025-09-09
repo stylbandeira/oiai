@@ -218,6 +218,10 @@ class CompanyController extends Controller
      */
     public function destroy(Company $company)
     {
-        //
+        $company->delete();
+
+        return response([
+            'message' => 'Empresa deletada com sucesso!'
+        ]);
     }
 }
