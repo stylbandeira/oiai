@@ -173,7 +173,41 @@ class CompanyController extends Controller
      */
     public function update(Request $request, Company $company)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'name' => 'string',
+            'cnpj' => 'string|unique:company,cnpj,' . $company->id,
+            'img' => 'image',
+            'website' => 'string',
+            'email' => 'string|email',
+            'status' => 'string',
+            'phone' => 'string',
+            'description' => 'string',
+            'raw_address' => 'string',
+        ]);
+
+        if ($validator->fails()) {
+            return response([
+                'errors' => $validator->errors()
+            ], 400);
+        }
+
+        $validatedData = $request->all();
+
+        if ($request->hasFile('img')) {
+
+            if ($company->img && Storage::disk('public')->exists($company->img)) {
+                Storage::disk('public')->delete($company->img);
+            }
+
+            $imgPath = $request->file('img')->store('companies/images', 'public');
+            $validatedData['img'] = $imgPath;
+        }
+
+        $company->update($validatedData);
+
+        return response([
+            'company' => $company
+        ]);
     }
 
     /**
