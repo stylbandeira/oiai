@@ -50,8 +50,6 @@ class CompanyController extends Controller
 
         $perPage = $request->per_page ?? 10;
 
-        Log::info($request->all());
-
         if ($request->user()->type === 'admin') {
 
             //TO-DO - QUERO DEIXAR ISSO MAIS AUTOMÁTICO
@@ -67,6 +65,8 @@ class CompanyController extends Controller
         $companies = $query->with(['owners', 'products'])
             ->withCount('products')
             ->paginate($perPage);
+
+        Log::alert($companies);
 
         if ($request->user()->type === 'admin') {
             return AdminCompanyResource::collection($companies);

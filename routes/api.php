@@ -3,9 +3,10 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\ProductCategoryController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -28,12 +29,12 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::prefix('admin')->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard']);
+
         Route::apiResource('/companies', CompanyController::class);
+        Route::apiResource('/products', ProductController::class);
+        Route::apiResource('/categories', ProductCategoryController::class);
     });
 });
-//Rotas admin
-// Route::middleware('auth:sanctum')->get('admin/dashboard', [AdminController::class, 'dashboard']);
-// Route::post('admin/companies', [AdminController::class, 'store']);
 
 
 // Rotas de verificação de email
