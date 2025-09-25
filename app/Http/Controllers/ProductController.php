@@ -7,6 +7,7 @@ use App\Http\Resources\ClientProductResource;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class ProductController extends Controller
 {
@@ -47,7 +48,35 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        //
+
+        $validate = Validator::make($request->all(), [
+            'name' => 'required|string',
+            'quantity' => 'required|integer',
+            'unity' => 'required|exists:unities,id',
+            'category' => 'required|exists:product_category,id',
+            'img' => 'image'
+        ]);
+
+        if ($validate->fails()) {
+            return response([
+                'errors' => $validate->errors()
+            ], 400);
+        }
+
+        $validatedData = $request->all();
+        $validatedData['unit_id'] = $request->unity;
+        $validatedData['category_id'] = $request->category;
+
+        if ($request->hasFile('img')) {
+            $imgPath = $request->file('img')->store('products/images', 'public');
+            $validatedData['img'] = $imgPath;
+        }
+
+        $product = Product::create($validatedData);
+
+        return response([
+            'product' => $product
+        ]);
     }
 
     /**
