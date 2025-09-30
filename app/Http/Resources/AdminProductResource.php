@@ -19,7 +19,7 @@ class AdminProductResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'sku' => $this->sku,
-            'img' => $this->img,
+            'img' => $this->img ? config('app.url') . '/storage/' . $this->img : null,
             'average_price' => $this->average_price,
 
             //Only for Admin
