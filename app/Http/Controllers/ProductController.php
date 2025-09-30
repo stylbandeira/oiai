@@ -6,7 +6,9 @@ use App\Http\Resources\AdminProductResource;
 use App\Http\Resources\ClientProductResource;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class ProductController extends Controller
@@ -48,12 +50,11 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-
         $validate = Validator::make($request->all(), [
             'name' => 'required|string',
             'quantity' => 'required|integer',
-            'unity' => 'required|exists:unities,id',
-            'category' => 'required|exists:product_category,id',
+            'unit_id' => 'required|exists:unities,id',
+            'category_id' => 'required|exists:product_category,id',
             'img' => 'image'
         ]);
 
@@ -64,8 +65,6 @@ class ProductController extends Controller
         }
 
         $validatedData = $request->all();
-        $validatedData['unit_id'] = $request->unity;
-        $validatedData['category_id'] = $request->category;
 
         if ($request->hasFile('img')) {
             $imgPath = $request->file('img')->store('products/images', 'public');
@@ -87,7 +86,12 @@ class ProductController extends Controller
      */
     public function show($id)
     {
-        //
+        $user = Auth::user();
+
+
+        $product = Product::with(['category', 'unity'])->find($id);
+
+        return new AdminProductResource($product);
     }
 
     /**
@@ -97,9 +101,39 @@ class ProductController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, Product $product)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'name' => 'string',
+            'sku' => 'string|unique:products,sku,' . $product->id,
+            'img' => 'image',
+            'unit_id' => 'exists:unities,id',
+            'category_id' => 'exists:product_category,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response([
+                'errors' => $validator->errors()
+            ], 400);
+        }
+
+        $validatedData = $request->all();
+
+        if ($request->hasFile('img')) {
+
+            if ($product->img && Storage::disk('public')->exists($product->img)) {
+                Storage::disk('public')->delete($product->img);
+            }
+
+            $imgPath = $request->file('img')->store('companies/images', 'public');
+            $validatedData['img'] = $imgPath;
+        }
+
+        $product->update($validatedData);
+
+        return response([
+            'product' => $product
+        ]);
     }
 
     /**
