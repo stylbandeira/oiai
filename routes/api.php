@@ -33,6 +33,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         Route::apiResource('/companies', CompanyController::class);
         Route::apiResource('/products', ProductController::class);
+        Route::post('/products/import', [ProductController::class, 'import']);
         // Route::apiResource('/categories', ProductCategoryController::class);
     });
 
