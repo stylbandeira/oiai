@@ -32,8 +32,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard']);
 
         Route::apiResource('/companies', CompanyController::class);
-        Route::apiResource('/products', ProductController::class);
         Route::post('/products/import', [ProductController::class, 'import']);
+        Route::get('/products/export', [ProductController::class, 'export']);
+        Route::apiResource('/products', ProductController::class);
         // Route::apiResource('/categories', ProductCategoryController::class);
     });
 

@@ -21,7 +21,7 @@ class Product extends Model
     ];
 
     protected $attributes = [
-        'category_id' => 1
+        'category_id' => 1,
     ];
 
     public function userAddedProducts()
