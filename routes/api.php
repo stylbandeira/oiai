@@ -36,6 +36,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/products/export', [ProductController::class, 'export']);
         Route::apiResource('/products', ProductController::class);
         // Route::apiResource('/categories', ProductCategoryController::class);
+        Route::apiResource('/users', UserController::class);
     });
 
     Route::apiResource('/unities', UnityController::class);
