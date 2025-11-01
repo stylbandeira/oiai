@@ -139,6 +139,4 @@ class UserController extends Controller
             'user' => new AdminUserResource($user)
         ]);
     }
-
-    public function
 }
