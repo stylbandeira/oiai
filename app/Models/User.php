@@ -61,4 +61,9 @@ class User extends Authenticatable
     {
         $this->notify(new VerifyEmailNotification);
     }
+
+    public function companies()
+    {
+        return $this->belongsToMany(Company::class, 'company_owners', 'user_id', 'company_id');
+    }
 }
