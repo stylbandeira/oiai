@@ -25,6 +25,7 @@ class AdminUserResource extends JsonResource
             'reputation' => $this->reputation,
             'cpf' => $this->cpf,
             'status' => $this->status,
+            'companies' => $this->whenLoaded('companies', $this->companies),
 
             //Only for Admin
             'email_verified_at' => $this->email_verified_at,
