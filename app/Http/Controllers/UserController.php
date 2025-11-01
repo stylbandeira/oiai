@@ -4,12 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\AdminUserResource;
 use App\Models\User;
-use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rules\Password;
 
 class UserController extends Controller
 {
@@ -122,4 +117,28 @@ class UserController extends Controller
             'message' => 'Usuário excluído com sucesso!'
         ]);
     }
+
+    /**
+     * Função para reverter deleção de usuário
+     *
+     * @param User $user
+     * @return void
+     */
+    public function revertDestroy(User $user)
+    {
+        if (!$user->deleted_at) {
+            return response([
+                'message' => 'Usuário não precisa ser reativado.'
+            ], 400);
+        }
+
+        $user->restore();
+
+        return response([
+            'message' => 'Usuário revertido',
+            'user' => new AdminUserResource($user)
+        ]);
+    }
+
+    public function
 }
