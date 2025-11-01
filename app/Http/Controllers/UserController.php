@@ -99,11 +99,27 @@ class UserController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @param User $user
+     * @return void
      */
-    public function destroy($id)
+    public function destroy(User $user)
     {
-        //
+        if (!$user->companies) {
+            return response([
+                'message' => 'Apague a relação entre usuário e empresa primeiro.'
+            ], 400);
+        }
+
+        if ($user->type === 'admin') {
+            return response([
+                'message' => 'Infelizmente não é possível deletar usuários do tipo admin.'
+            ], 400);
+        }
+
+        $user->delete();
+
+        return response([
+            'message' => 'Usuário excluído com sucesso!'
+        ]);
     }
 }
