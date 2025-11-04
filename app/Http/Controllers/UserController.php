@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\AdminUserResource;
 use App\Models\User;
+use App\Services\ExportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -241,6 +242,79 @@ class UserController extends Controller
             'message' => 'Usuário revertido',
             'user' => new AdminUserResource($user)
         ]);
+    }
+
+    /**
+     * Export users to CSV
+     */
+    public function export(Request $request, ExportService $exportService)
+    {
+        $query = User::query();
+        $user = Auth::user();
+
+        if ($request->has('search') && $request->search) {
+            $query->where(function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%')
+                    ->orWhere('email', 'like', '%' . $request->search . '%')
+                    ->orWhere('cpf', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        if ($request->has('type') && $request->type !== 'all') {
+            $query->where('type', $request->type);
+        }
+
+        if ($request->has('status') && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->has('sort_by') && $request->has('sort_order')) {
+            $validSortFields = ['name', 'points', 'reputation', 'created_at'];
+            if (in_array($request->sort_by, $validSortFields)) {
+                $query->orderBy($request->sort_by, $request->sort_order);
+            }
+        } else {
+            $query->orderBy('created_at', 'desc');
+        }
+
+        if ($user->type === 'admin') {
+            $query->withTrashed();
+        }
+
+        $users = $query->get();
+
+        $columns = [
+            'ID' => 'id',
+            'Nome' => 'name',
+            'Email' => 'email',
+            'CPF' => 'cpf',
+            'Tipo' => function ($user) {
+                $types = [
+                    'client' => 'Cliente',
+                    'company' => 'Empresa',
+                    'admin' => 'Administrador'
+                ];
+                return $types[$user->type] ?? $user->type;
+            },
+            'Pontos' => 'points',
+            'Reputação' => 'reputation',
+            'Status' => function ($user) {
+                $statuses = [
+                    'active' => 'Ativo',
+                    'inactive' => 'Inativo',
+                    'suspended' => 'Suspenso'
+                ];
+                return $statuses[$user->status] ?? $user->status;
+            },
+            'Data de Criação' => function ($user) {
+                return $user->created_at->format('d/m/Y H:i:s');
+            },
+            'Data de Exclusão' => function ($user) {
+                return $user->deleted_at ? $user->deleted_at->format('d/m/Y H:i:s') : '-';
+            },
+        ];
+
+        return $exportService->exportToCSV($users, $columns, 'usuarios');
     }
 
     /**
