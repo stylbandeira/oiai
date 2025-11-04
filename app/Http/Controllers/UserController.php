@@ -5,6 +5,11 @@ namespace App\Http\Controllers;
 use App\Http\Resources\AdminUserResource;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
@@ -16,6 +21,7 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $query = User::query();
+        $user = Auth::user();
 
         if ($request->has('search') && !empty($request->search)) {
             $searchTerm = '%' . $request->search . '%';
@@ -32,6 +38,10 @@ class UserController extends Controller
 
         if ($request->has('type') && $request->type !== 'all') {
             $query->where('type', $request->type);
+        }
+
+        if ($user->type === 'admin') {
+            $query->withTrashed();
         }
 
         $perPage = $request->per_page ?? 10;
@@ -52,9 +62,84 @@ class UserController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create()
+    public function store(Request $request)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'name' => 'string|required',
+            'type' => 'string|required',
+            'email' => 'email|required',
+            'cpf' => 'string|required',
+            'status' => 'string',
+            'companies' => 'array',
+            'companies.*' => 'exists:company,id'
+        ]);
+
+        Log::alert($request->all());
+
+        if ($validator->fails()) {
+            return response([
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        // $temporaryPassword = Str::uuid();
+
+        // $user = User::create([
+        //     'name' => $request->name,
+        //     'type' => $request->type,
+        //     'email' => $request->email,
+        //     'cpf' => $request->cpf,
+        //     'status' => $request->status,
+        //     'password' => bcrypt($temporaryPassword),
+        //     'email_verified_at' => null,
+        //     'must_change_password' => true,
+        // ]);
+
+        // if ($request->type === 'company' && $request->has('companies')) {
+        //     $user->companies()->attach($request->companies);
+        // }
+
+        // return response([
+        //     'message' => 'uau'
+        // ]);
+
+        DB::beginTransaction();
+
+        try {
+            $temporaryPassword = Str::uuid();
+
+            $user = User::create([
+                'name' => $request->name,
+                'type' => $request->type,
+                'email' => $request->email,
+                'cpf' => $request->cpf,
+                'status' => $request->status,
+                'password' => bcrypt($temporaryPassword),
+                'email_verified_at' => null,
+                'must_change_password' => true,
+            ]);
+
+            if ($request->type === 'company' && $request->has('companies')) {
+                $user->companies()->attach($request->companies);
+            }
+
+            DB::commit();
+
+            $this->sendWelcomeEmail($user, $temporaryPassword);
+
+            return response([
+                'message' => 'Usuário criado com sucesso!',
+                'user' => $user
+            ]);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            Log::alert("Erro");
+
+            return response()->json([
+                'message' => 'Erro ao criar usuário',
+                'error' => $th->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -99,6 +184,7 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
+        Log::alert('Error');
         if (!$user->companies) {
             return response([
                 'message' => 'Apague a relação entre usuário e empresa primeiro.'
@@ -111,7 +197,11 @@ class UserController extends Controller
             ], 400);
         }
 
-        $user->delete();
+        if ($user->deleted_at) {
+            $user->deleted_at == null;
+        } else {
+            $user->delete();
+        }
 
         return response([
             'message' => 'Usuário excluído com sucesso!'
@@ -124,8 +214,10 @@ class UserController extends Controller
      * @param User $user
      * @return void
      */
-    public function revertDestroy(User $user)
+    public function revertDestroy(Int $id)
     {
+        $user = User::withTrashed()->find($id);
+
         if (!$user->deleted_at) {
             return response([
                 'message' => 'Usuário não precisa ser reativado.'
@@ -138,5 +230,18 @@ class UserController extends Controller
             'message' => 'Usuário revertido',
             'user' => new AdminUserResource($user)
         ]);
+    }
+
+    /**
+     * TODO - Criar sendWelcomeEmail para enviar email de boas vindas para usuários criados
+     * usando um usuário do tipo admin.
+     *
+     * @param User $user
+     * @param String $password
+     * @return void
+     */
+    private function sendWelcomeEmail(User $user, String $password)
+    {
+        return true;
     }
 }
