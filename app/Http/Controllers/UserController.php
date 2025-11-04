@@ -40,6 +40,17 @@ class UserController extends Controller
             $query->where('type', $request->type);
         }
 
+        $sortField = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+
+        $validSortFields = ['name', 'points', 'reputation', 'created_at'];
+
+        if (in_array($sortField, $validSortFields)) {
+            $query->orderBy($sortField, $sortOrder);
+        } else {
+            $query->orderBy('created_at', 'desc');
+        }
+
         if ($user->type === 'admin') {
             $query->withTrashed();
         }
