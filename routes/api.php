@@ -29,6 +29,7 @@ Route::post('/login', [AuthController::class, 'login']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::prefix('admin')->group(function () {
+        Route::post('/users/revertDeleted/{id}', [UserController::class, 'revertDestroy']);
         Route::get('/dashboard', [AdminController::class, 'dashboard']);
 
         Route::apiResource('/companies', CompanyController::class);
@@ -67,9 +68,4 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     });
 
     Route::post('/logout', [AuthController::class, 'logout']);
-});
-
-// Rotas de exemplo para usuários (protegidas)
-Route::middleware(['auth:sanctum'])->group(function () {
-    Route::apiResource('users', UserController::class);
 });
