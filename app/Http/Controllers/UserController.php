@@ -94,27 +94,6 @@ class UserController extends Controller
             ], 422);
         }
 
-        // $temporaryPassword = Str::uuid();
-
-        // $user = User::create([
-        //     'name' => $request->name,
-        //     'type' => $request->type,
-        //     'email' => $request->email,
-        //     'cpf' => $request->cpf,
-        //     'status' => $request->status,
-        //     'password' => bcrypt($temporaryPassword),
-        //     'email_verified_at' => null,
-        //     'must_change_password' => true,
-        // ]);
-
-        // if ($request->type === 'company' && $request->has('companies')) {
-        //     $user->companies()->attach($request->companies);
-        // }
-
-        // return response([
-        //     'message' => 'uau'
-        // ]);
-
         DB::beginTransaction();
 
         try {
@@ -160,9 +139,13 @@ class UserController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show(User $user)
     {
-        //
+        $current_user = Auth::user();
+
+        if ($current_user->type === 'admin') {
+            return new AdminUserResource($user);
+        }
     }
 
     /**
