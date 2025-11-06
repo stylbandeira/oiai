@@ -86,8 +86,6 @@ class UserController extends Controller
             'companies.*' => 'exists:company,id'
         ]);
 
-        Log::alert($request->all());
-
         if ($validator->fails()) {
             return response([
                 'errors' => $validator->errors()
@@ -166,9 +164,67 @@ class UserController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, User $user)
     {
-        //
+        Log::alert($request->all());
+
+        $validator = Validator::make($request->all(), [
+            'name' => 'string',
+            'type' => 'string',
+            'email' => 'email',
+            'cpf' => 'string',
+            'status' => 'string',
+            'companies' => 'array',
+            'companies.*' => 'exists:company,id'
+        ]);
+
+        if ($validator->fails()) {
+            return response([
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        if ($request->type === 'company' && $request->has('companies')) {
+            Log::alert('Update User');
+            $user->companies()->detach();
+            $user->companies()->attach($request->companies);
+        }
+
+        DB::beginTransaction();
+
+        try {
+
+            $user->update([
+                'name' => $request->name,
+                'type' => $request->type,
+                'email' => $request->email,
+                'cpf' => $request->cpf,
+                'status' => $request->status,
+            ]);
+
+            if ($request->type === 'company' && $request->has('companies')) {
+                Log::alert('Update User');
+                $user->companies()->detach();
+                $user->companies()->attach($request->companies);
+            }
+
+            $user->save();
+
+            DB::commit();
+
+            return response([
+                'message' => 'Usuário editado com sucesso!',
+                'user' => new AdminUserResource($user)
+            ]);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            Log::alert("Erro");
+
+            return response()->json([
+                'message' => 'Erro ao criar usuário',
+                'error' => $th->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -179,7 +235,6 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
-        Log::alert('Error');
         if (!$user->companies) {
             return response([
                 'message' => 'Apague a relação entre usuário e empresa primeiro.'
