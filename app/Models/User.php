@@ -32,7 +32,8 @@ class User extends Authenticatable
     ];
 
     protected $attributes = [
-        'cpf' => null
+        'cpf' => null,
+        'monthEconomy'
     ];
 
     /**
@@ -68,5 +69,25 @@ class User extends Authenticatable
     public function companies()
     {
         return $this->belongsToMany(Company::class, 'company_owners', 'user_id', 'company_id');
+    }
+
+    public function lists()
+    {
+        return $this->hasOne(ItensList::class, 'user_id');
+    }
+
+    public function activeLists()
+    {
+        return $this->lists()->where('status', 'active');
+    }
+
+    /**
+     * TODO EPIC 015
+     *
+     * @return void
+     */
+    public function getMonthEconomyAttribute()
+    {
+        return 0;
     }
 }

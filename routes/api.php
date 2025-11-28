@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\ListController;
 use App\Http\Controllers\ProductCategoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\UnityController;
@@ -67,6 +68,10 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
             'email_verified' => $request->user()->hasVerifiedEmail()
         ]);
     });
+
+    Route::apiResource('/lists', ListController::class);
+    Route::get('/products', [ProductController::class, 'index']);
+    Route::get('/dashboard-data', [UserController::class, 'dashboardData']);
 
     Route::post('/logout', [AuthController::class, 'logout']);
 });

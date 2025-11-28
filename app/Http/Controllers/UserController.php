@@ -14,6 +14,23 @@ use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
+
+    public function dashboardData(Request $request)
+    {
+        $user = Auth::user();
+
+        $dashboardData = [
+            'activeLists' => $user->activeLists->count(),
+            'points' => $user->points,
+            'monthEconomy' => $user->monthEconomy,
+            'reputation' => $user->reputation,
+        ];
+
+        return response([
+            'dashboardData' => $dashboardData
+        ]);
+    }
+
     /**
      * Display a listing of the resource.
      *

@@ -41,9 +41,10 @@ class ProductController extends Controller
             ->paginate($perPage);
 
         if ($request->user()->type === 'admin') {
-            Log::alert('Entrou aqui quando nem deveria.');
             return AdminProductResource::collection($products);
         }
+
+        // Log::alert([ClientProductResource::collection($products)]);
 
         return ClientProductResource::collection($products);
     }
