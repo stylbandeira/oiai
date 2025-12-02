@@ -20,6 +20,6 @@ class ItensList extends Model
 
     public function products()
     {
-        return $this->belongsToMany(Product::class, 'list_products', 'product_id', 'list_id');
+        return $this->belongsToMany(Product::class, 'list_products', 'list_id', 'product_id')->withPivot('quantity');
     }
 }
