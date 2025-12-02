@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\ClientListResource;
 use App\Models\ItensList;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -55,12 +56,8 @@ class ListController extends Controller
             'total' => 0,
         ]);
 
-        // Log::alert($request->products);
-
-        //Atribui os produtos à lista, com quantidades;
-        // $list->products()->attach($request->products);
-
         $productsWithQuantities = [];
+        $productIds = array_column(array_column($request->products, 'product'), 'id');
 
         foreach ($request->products as $product) {
             // Log::alert(array_keys());
@@ -68,6 +65,7 @@ class ListController extends Controller
         }
 
         $list->products()->attach($productsWithQuantities);
+        Product::whereIn('id', $productIds)->increment('listAdded');
 
         return response([
             'message' => 'Lista criada com sucesso!',
