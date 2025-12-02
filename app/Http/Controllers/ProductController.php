@@ -35,16 +35,17 @@ class ProductController extends Controller
             });
         }
 
-        $perPage = $request->per_page ?? 10;
+        $perPage = $request->per_page ?? 15;
 
         $products = $query->with(['category', 'unity'])
+            ->orderBy('listAdded', 'desc')
+            ->orderBy('name', 'asc')
+            ->limit(1500)
             ->paginate($perPage);
 
         if ($request->user()->type === 'admin') {
             return AdminProductResource::collection($products);
         }
-
-        // Log::alert([ClientProductResource::collection($products)]);
 
         return ClientProductResource::collection($products);
     }
