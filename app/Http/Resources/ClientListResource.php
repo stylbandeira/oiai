@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Log;
 
 class ClientListResource extends JsonResource
 {
@@ -16,13 +17,20 @@ class ClientListResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'optimized' => $this->optimized,
             'user_id' => $this->user_id,
             'name' => $this->name,
             'favorite' => boolval($this->favorite),
             'status' => boolval($this->status),
             'total' => floatval($this->total),
-            'products' => $this->whenLoaded('products', $this->products),
-            'productsQuantity' => $this->whenLoaded('products', $this->products->count()),
+            'created_at' => $this->created_at,
+            'products' => $this->whenLoaded('listProducts', function () {
+                return ClientProductResource::collection($this->products);
+            }),
+            'companyId' => $this->whenLoaded('listProducts.companyProduct.company', function () {
+                return $this->listProducts->listProducts->company->id;
+            }),
+            'productsQuantity' => $this->whenLoaded('products', $this->products()->count()),
         ];
     }
 }
