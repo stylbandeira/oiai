@@ -19,9 +19,12 @@ class ListController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
+        $perPage = $request->per_page ?? 15;
+
         $itensList = ItensList::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
             ->with('products')
-            ->paginate();
+            ->paginate($perPage);
 
         return response([
             'itensLists' => ClientListResource::collection($itensList)
@@ -81,7 +84,17 @@ class ListController extends Controller
      */
     public function show($id)
     {
-        //
+        $list = ItensList::with(['listProducts' => function ($query) {
+            $query->with(['product', 'companyProduct' => function ($query) {
+                $query->with('company');
+            }]);
+        }])
+            ->find($id);
+
+        return response([
+            'list' => new ClientListResource($list),
+            'optimized' => $list->optimized
+        ]);
     }
 
     /**
@@ -104,7 +117,15 @@ class ListController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $list = ItensList::find($id);
+
+        if ($list->optimized) {
+            $this->optimizeList($list);
+        }
+
+        return response([
+            'list' => $list
+        ]);
     }
 
     /**
@@ -116,5 +137,15 @@ class ListController extends Controller
     public function destroy($id)
     {
         //
+    }
+
+    private function optimizeList(ItensList $list)
+    {
+        // $list->optimized = true;
+        //empresas mais próximas (distância a definir TODO)
+        //pega os produtos
+        //verifica onde é mais barato
+        //atribui esse
+        $list->save();
     }
 }
