@@ -15,11 +15,17 @@ class ItensList extends Model
         'user_id',
         'name',
         'favorite',
-        'total'
+        'total',
+        'optimized'
     ];
 
     public function products()
     {
-        return $this->belongsToMany(Product::class, 'list_products', 'list_id', 'product_id')->withPivot('quantity');
+        return $this->belongsToMany(Product::class, 'list_products', 'list_id', 'product_id')->withPivot(['quantity', 'company_product_id']);
+    }
+
+    public function listProducts()
+    {
+        return $this->hasMany(ListProducts::class, 'list_id');
     }
 }
