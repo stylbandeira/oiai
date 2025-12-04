@@ -9,4 +9,9 @@ class CompanyProducts extends Model
 {
     use HasFactory;
     protected $table = 'company_products';
+
+    public function company()
+    {
+        return $this->belongsTo(Company::class, 'company_id');
+    }
 }
