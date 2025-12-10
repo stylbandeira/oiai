@@ -136,7 +136,13 @@ class ListController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $list = ItensList::find($id);
+
+        $list->delete();
+
+        return response([
+            'message' => 'Lista deletada com sucesso!'
+        ]);
     }
 
     private function optimizeList(ItensList $list)
