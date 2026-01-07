@@ -15,6 +15,11 @@ class ListProducts extends Model
         'company_product_id' => 0
     ];
 
+    public $fillable = [
+        'product_id',
+        'quantity'
+    ];
+
     public function list()
     {
         return $this->belongsTo(ItensList::class, 'list_id');
