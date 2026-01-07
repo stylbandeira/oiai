@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\ListController;
+use App\Http\Controllers\ListItensController;
 use App\Http\Controllers\ProductCategoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\UnityController;
@@ -70,6 +71,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     });
 
     Route::apiResource('/lists', ListController::class);
+    Route::apiResource('/listItems', ListItensController::class);
     Route::get('/products', [ProductController::class, 'index']);
     Route::get('/dashboard-data', [UserController::class, 'dashboardData']);
 
