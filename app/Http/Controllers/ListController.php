@@ -63,7 +63,6 @@ class ListController extends Controller
         $productIds = array_column(array_column($request->products, 'product'), 'id');
 
         foreach ($request->products as $product) {
-            // Log::alert(array_keys());
             $productsWithQuantities[$product['product']['id']] = ['quantity' => $product['quantity']];
         }
 
@@ -84,12 +83,18 @@ class ListController extends Controller
      */
     public function show($id)
     {
-        $list = ItensList::with(['listProducts' => function ($query) {
-            $query->with(['product', 'companyProduct' => function ($query) {
-                $query->with('company');
-            }]);
-        }])
-            ->find($id);
+        $list = ItensList::with([
+            'listProducts.product.unity',
+            'listProducts.product.category',
+            'listProducts.companyProduct.company'
+        ])->find($id);
+
+        if (!$list) {
+            return response([
+                'error' => 'List not found',
+                'message' => 'Lista não encontrada'
+            ], 404);
+        }
 
         return response([
             'list' => new ClientListResource($list),
@@ -117,7 +122,20 @@ class ListController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $list = ItensList::find($id);
+        $list = ItensList::with('listProducts')->find($id);
+
+        $list->update([
+            'name' => $request->name
+        ]);
+
+        $list->listProducts()->delete();
+
+        foreach ($request->items as $item) {
+            $list->listProducts()->create([
+                'product_id' => $item['product_id'],
+                'quantity' => $item['quantity'],
+            ]);
+        }
 
         if ($list->optimized) {
             $this->optimizeList($list);
