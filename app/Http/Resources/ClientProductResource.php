@@ -23,7 +23,7 @@ class ClientProductResource extends JsonResource
             'average_price' => floatval($this->average_price),
             'unity' => $this->whenLoaded('unity', $this->unity->abbreviation),
             'unity_id' => $this->whenLoaded('unity', $this->unity->id),
-            'quantity' => $this->whenLoaded('unity', $this->quantity),
+            'unity_quantity' => $this->whenLoaded('unity', $this->quantity),
             'category' => $this->whenLoaded('category', $this->category->name),
         ];
     }
