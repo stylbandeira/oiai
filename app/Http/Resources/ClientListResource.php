@@ -21,14 +21,15 @@ class ClientListResource extends JsonResource
             'user_id' => $this->user_id,
             'name' => $this->name,
             'favorite' => boolval($this->favorite),
-            'status' => boolval($this->status),
+            'status' => $this->status,
             'total' => floatval($this->total),
             'created_at' => $this->created_at,
             'products' => $this->whenLoaded('listProducts', function () {
-                return ClientProductResource::collection($this->products);
+                return ListProductResource::collection($this->listProducts);
             }),
+
             'companyId' => $this->whenLoaded('listProducts.companyProduct.company', function () {
-                return $this->listProducts->listProducts->company->id;
+                return $this->listProducts->company->id;
             }),
             'productsQuantity' => $this->whenLoaded('products', $this->products()->count()),
         ];
