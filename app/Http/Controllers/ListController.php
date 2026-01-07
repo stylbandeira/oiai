@@ -8,6 +8,7 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class ListController extends Controller
 {
@@ -50,6 +51,17 @@ class ListController extends Controller
     public function store(Request $request)
     {
         $user = Auth::user();
+
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string'
+        ]);
+
+        if ($validator->fails()) {
+            return response([
+                'message' => 'Erro ao tentar criar lista',
+                'errors' => $validator->errors()
+            ], 403);
+        }
 
         //Cria lista
         $list = ItensList::create([
