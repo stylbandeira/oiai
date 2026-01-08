@@ -140,7 +140,7 @@ class ListController extends Controller
             'name' => $request->name
         ]);
 
-        $list->listProducts()->delete();
+        $list->listProducts()->where('completed', 0)->delete();
 
         foreach ($request->items as $item) {
             $list->listProducts()->create([
