@@ -73,6 +73,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::apiResource('/lists', ListController::class);
     Route::apiResource('/listItems', ListItensController::class);
     Route::get('/products', [ProductController::class, 'index']);
+    Route::post('/products/qrcode', [ProductController::class, 'qrCodeDecoder']);
     Route::get('/dashboard-data', [UserController::class, 'dashboardData']);
 
     Route::post('/logout', [AuthController::class, 'logout']);
