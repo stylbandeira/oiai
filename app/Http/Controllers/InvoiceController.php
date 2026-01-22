@@ -36,10 +36,10 @@ class InvoiceController extends Controller
             ], 400);
         }
 
-        return response()->json([
+        return response([
             'success' => true,
             'message' => 'XML processado com sucesso',
-            'data' => $result['data']
+            // 'data' => $result['data']
         ]);
     }
 
@@ -72,7 +72,7 @@ class InvoiceController extends Controller
         // SERVICE, POR EXEMPLO: UserService, ProductService, CompanyService.
         // $this->saveToDatabase($result['data']);
 
-        return response()->json([
+        return response([
             'success' => true,
             'message' => 'NFCe processada com sucesso',
             // 'tipo' => $result['tipo'] ?? 'desconhecido',
