@@ -87,20 +87,6 @@ class ProductController extends Controller
     }
 
     /**
-     * Undocumented function
-     *
-     * @param Request $request
-     * @return void
-     */
-    public function qrCodeDecoder(Request $request)
-    {
-        // TODO - IMPLEMENTAR A INSTRUÇÃO PARA VERIFICAR OS DADOS DO LINK
-        return response([
-            'message' => 'Success!'
-        ], 200);
-    }
-
-    /**
      * Display the specified resource.
      *
      * @param  int  $id
