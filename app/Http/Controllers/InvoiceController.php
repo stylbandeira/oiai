@@ -75,10 +75,10 @@ class InvoiceController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'NFCe processada com sucesso',
-            'tipo' => $result['tipo'] ?? 'desconhecido',
-            'data' => $result['data'],
-            'produtos_count' => $result['produtos_count'] ?? 0,
-            'valor_total' => $result['valor_total'] ?? 0,
+            // 'tipo' => $result['tipo'] ?? 'desconhecido',
+            // 'data' => $result['data'],
+            // 'produtos_count' => $result['produtos_count'] ?? 0,
+            // 'valor_total' => $result['valor_total'] ?? 0,
         ]);
     }
 }
