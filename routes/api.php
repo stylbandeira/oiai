@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\ListController;
 use App\Http\Controllers\ListItensController;
 use App\Http\Controllers\ProductCategoryController;
@@ -72,8 +73,14 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
 
     Route::apiResource('/lists', ListController::class);
     Route::apiResource('/listItems', ListItensController::class);
+
+    // PRODUCTS
     Route::get('/products', [ProductController::class, 'index']);
-    Route::post('/products/qrcode', [ProductController::class, 'qrCodeDecoder']);
+
+    // INVOICES
+    Route::post('/invoice/process', [InvoiceController::class, 'processInvoice']);
+    Route::post('/invoice/processXML', [InvoiceController::class, 'processXML']);
+
     Route::get('/dashboard-data', [UserController::class, 'dashboardData']);
 
     Route::post('/logout', [AuthController::class, 'logout']);
