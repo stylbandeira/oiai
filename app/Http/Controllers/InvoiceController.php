@@ -2,9 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Invoice;
 use App\Services\NFCeScraperService;
 use App\Services\NFCeXMLParserService;
+use Carbon\Carbon;
+use DateTime;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\Log;
 
 class InvoiceController extends Controller
 {
@@ -50,6 +56,8 @@ class InvoiceController extends Controller
      */
     public function processInvoice(Request $request)
     {
+        $user = Auth::user();
+
         $request->validate([
             'qr_code_data' => 'required|string',
             'invoice_code' => 'string'
@@ -67,17 +75,43 @@ class InvoiceController extends Controller
             ], 400);
         }
 
+        Log::alert($result['data']);
+
         //TODO - PASSAR DADOS DOS PRODUTOS E ENVIAR CADA DADO PARA CADA
         // SERVICE, POR EXEMPLO: UserService, ProductService, CompanyService.
         // $this->saveToDatabase($result['data']);
+        $invoice_code = ($request->invoice_code ? 'NFe' . $request->invoice_code : null) ?? $result['data']['chave_acesso'];
 
-        return response([
-            'success' => true,
-            'message' => 'NFCe processada com sucesso',
-            // 'tipo' => $result['tipo'] ?? 'desconhecido',
-            // 'data' => $result['data'],
-            // 'produtos_count' => $result['produtos_count'] ?? 0,
-            // 'valor_total' => $result['valor_total'] ?? 0,
-        ]);
+        //FIRST OR CREATE DE COMPANY
+        //FIRST OR CREATE DE INVOICE
+        //JOB DE CRIAÇÃO DE PRODUTOS +
+        //CRIAÇÃO DE TABELA ASSOCIATIVA DE PRODUTOS NA NOTA
+        //ASSOCIAÇÃO DE PRODUTOS NA NOTA E NA COMPANY
+
+        $invoice = Invoice::firstOrCreate(
+            [
+                'access_key' => $invoice_code
+            ],
+            [
+                'user_id' => $user->id,
+                'receipt_data' => $result['data']['protocolo']['data_recebimento'] ? DateTime::createFromFormat('d/m/Y H:i:s', $result['data']['protocolo']['data_recebimento']) : Carbon::today(),
+            ]
+        );
+
+        if ($invoice->wasRecentlyCreated) {
+            return response([
+                'success' => true,
+                'message' => 'NFCe processada com sucesso',
+                // 'tipo' => $result['tipo'] ?? 'desconhecido',
+                // 'data' => $result['data'],
+                // 'produtos_count' => $result['produtos_count'] ?? 0,
+                // 'valor_total' => $result['valor_total'] ?? 0,
+            ]);
+        } else {
+            return response([
+                'success' => true,
+                'message' => 'NFCe já cadastrada',
+            ], 409);
+        }
     }
 }
