@@ -32,14 +32,13 @@ class InvoiceController extends Controller
         if ($result['status'] === 'error') {
             return response()->json([
                 'success' => false,
-                'error' => $result['error']
+                'message' => 'Erro ao tentar capturar dados da NFCe',
             ], 400);
         }
 
         return response([
             'success' => true,
-            'message' => 'XML processado com sucesso',
-            // 'data' => $result['data']
+            'message' => 'XML processado com sucesso'
         ]);
     }
 
@@ -63,7 +62,7 @@ class InvoiceController extends Controller
         if ($result['status'] === 'error') {
             return response()->json([
                 'success' => false,
-                'error' => $result['error'],
+                'message' => 'Erro ao tentar capturar dados da NFCe',
                 'qr_data' => $qrData
             ], 400);
         }
