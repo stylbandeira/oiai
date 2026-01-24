@@ -17,11 +17,15 @@ class Product extends Model
         'img',
         'sku',
         'average_price',
-        'category_id'
+        'category_id',
+        'ean',
+        'description'
     ];
 
     protected $attributes = [
         'category_id' => 1,
+        'listAdded' => 0,
+        'description' => '',
     ];
 
     public function userAddedProducts()
