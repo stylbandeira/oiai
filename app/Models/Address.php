@@ -17,4 +17,8 @@ class Address extends Model
         'number',
         'complement',
     ];
+
+    protected $attributes = [
+        'country' => 'Brasil'
+    ];
 }
