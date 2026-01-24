@@ -22,10 +22,12 @@ class Company extends Model
         'status',
         'phone',
         'description',
-        'raw_address'
+        'raw_address',
+        'ie'
     ];
     protected $attributes = [
-        'img' => './'
+        'img' => './',
+        'status' => 'active'
     ];
 
     public function products()
