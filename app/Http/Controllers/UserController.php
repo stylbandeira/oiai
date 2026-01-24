@@ -20,7 +20,7 @@ class UserController extends Controller
         $user = Auth::user();
 
         $dashboardData = [
-            'activeLists' => $user->activeLists->count(),
+            'activeLists' => $user->activeLists ? $user->activeLists->count() : 0,
             'points' => $user->points,
             'monthEconomy' => $user->monthEconomy,
             'reputation' => $user->reputation,
