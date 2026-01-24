@@ -17,6 +17,8 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
+    const POINTS = 'points';
+
     /**
      * The attributes that are mass assignable.
      *
@@ -29,11 +31,11 @@ class User extends Authenticatable
         'password',
         'cpf',
         'status',
+        'points',
     ];
 
     protected $attributes = [
-        'cpf' => null,
-        'monthEconomy'
+        'cpf' => null
     ];
 
     /**
