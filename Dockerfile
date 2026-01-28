@@ -1,4 +1,3 @@
-# Usar imagem PHP com Apache
 FROM php:8.2-apache
 
 # Instalar dependências
@@ -13,7 +12,11 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
     zip \
     unzip \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    mariadb-client \
+    supervisor
+
+# Configurar PHP extensions
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
 
 # Habilitar mod_rewrite do Apache
@@ -22,7 +25,7 @@ RUN a2enmod rewrite
 # Instalar Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Instalar Node.js
+# Instalar Node.js (opcional, se precisar)
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
     && apt-get install -y nodejs
 
@@ -32,15 +35,28 @@ WORKDIR /var/www/html
 # Copiar o projeto
 COPY . /var/www/html
 
+# Instalar dependências do Composer
+RUN composer install --no-interaction --optimize-autoloader --no-dev
+
+# Copiar entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Copiar configuração do Supervisor
+COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Corrigir DocumentRoot do Apache
+RUN sed -i "s|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|g" /etc/apache2/sites-available/000-default.conf
+
 # Permissões
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Corrigir DocumentRoot do Apache para a pasta public
-RUN sed -i "s|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|g" /etc/apache2/sites-available/000-default.conf
-
-# Expor portas
+# Expor porta
 EXPOSE 80
 
-# Subir Apache
-CMD ["apache2-foreground"]
+# Usar entrypoint para configurações
+ENTRYPOINT ["docker-entrypoint.sh"]
+
+# Iniciar Supervisor (que controlará Apache e Worker)
+CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/supervisord.conf"]
