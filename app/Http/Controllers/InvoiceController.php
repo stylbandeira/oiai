@@ -155,7 +155,7 @@ class InvoiceController extends Controller
                     'sku' => $productData['codigo'],
                     'description' => $productData['descricao'],
                     'name' => $productData['descricao'],
-                    'unit_id' => $unities[$productData['unidade']]['id'] ?? 1,
+                    'unit_id' => $unities[strtolower($productData['unidade'])]['id'] ?? 1,
                     'quantity' => 1,
                     'average_price' => $productData['valor_unitario']
                 ],

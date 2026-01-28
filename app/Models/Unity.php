@@ -19,4 +19,12 @@ class Unity extends Model
             set: fn($value) => strtolower($value)
         );
     }
+
+    public function abbreviation(): Attribute
+    {
+        return Attribute::make(
+            get: fn($value) => strtolower($value),
+            set: fn($value) => strtolower($value)
+        );
+    }
 }
