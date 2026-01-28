@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\ProcessInvoiceJob;
 use App\Models\Address;
 use App\Models\Company;
 use App\Models\CompanyProducts;
@@ -140,46 +141,9 @@ class InvoiceController extends Controller
         //INSERE OS PRODUTOS
         //TODO - TRANSFORMAR EM UM JOB DE CRIAÇÃO DE PRODUTOS DEPOIS
         $products_data = $invoice_data['produtos'];
-        $unities = Unity::all()->keyBy('abbreviation')->toArray();
 
-        foreach ($products_data as $productData) {
 
-            //VERIFICA SE É PRODUTO SEM EAN
-            $insert = !is_numeric($productData['ean']) ?
-                ['sku' => $productData['codigo']] :
-                ['ean' => $productData['ean']];
-
-            $insertedProduct = Product::updateOrCreate(
-                $insert,
-                [
-                    'sku' => $productData['codigo'],
-                    'description' => $productData['descricao'],
-                    'name' => $productData['descricao'],
-                    'unit_id' => $unities[strtolower($productData['unidade'])]['id'] ?? 1,
-                    'quantity' => 1,
-                    'average_price' => $productData['valor_unitario']
-                ],
-            );
-
-            if ($insertedProduct->wasChanged  || $insertedProduct->wasRecentlyCreated) {
-                try {
-                    CompanyProducts::updateOrCreate(
-                        [
-                            'product_id' => $insertedProduct->id,
-                            'company_id' => $company->id,
-                        ],
-                        [
-                            'average_price' => $productData['valor_unitario']
-                        ]
-                    );
-                } catch (\Throwable $th) {
-                    Log::alert([
-                        'Error' => 'Impossível cadastrar produto na empresa',
-                        'Message' => $th->getMessage()
-                    ]);
-                }
-            }
-        }
+        ProcessInvoiceJob::dispatch($company, $products_data);
 
         //ATRIBUIÇÃO DE PONTOS AO USUÁRIO QUE CRIOU A NOTA
         $this->userRepo->addPoints($user->id, count($products_data));
