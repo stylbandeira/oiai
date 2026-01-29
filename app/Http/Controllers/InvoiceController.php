@@ -5,10 +5,7 @@ namespace App\Http\Controllers;
 use App\Jobs\ProcessInvoiceJob;
 use App\Models\Address;
 use App\Models\Company;
-use App\Models\CompanyProducts;
 use App\Models\Invoice;
-use App\Models\Product;
-use App\Models\Unity;
 use App\Repositories\UserRepository;
 use App\Services\NFCeScraperService;
 use App\Services\NFCeXMLParserService;
@@ -143,7 +140,7 @@ class InvoiceController extends Controller
         $products_data = $invoice_data['produtos'];
 
 
-        ProcessInvoiceJob::dispatch($company, $products_data);
+        ProcessInvoiceJob::dispatch($company, $products_data, $user);
 
         //ATRIBUIÇÃO DE PONTOS AO USUÁRIO QUE CRIOU A NOTA
         $this->userRepo->addPoints($user->id, count($products_data));
