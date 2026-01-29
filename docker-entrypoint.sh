@@ -30,7 +30,7 @@ php artisan view:clear
 
 echo "Iniciando Queue Worker em background..."
 # Worker rodando EM BACKGROUND (não controlado pelo Supervisor)
-php artisan queue:work --daemon --sleep=3 --tries=3 --timeout=60 > /var/www/html/storage/logs/worker.log 2>&1 &
+php artisan queue:listen --daemon --sleep=3 --tries=3 --timeout=60 > /var/www/html/storage/logs/worker.log 2>&1 &
 
 echo "Tudo pronto! Iniciando Supervisor..."
 exec /usr/bin/supervisord -n -c /etc/supervisor/supervisord.conf
