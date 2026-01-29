@@ -6,6 +6,9 @@ use App\Models\Company;
 use App\Models\CompanyProducts;
 use App\Models\Product;
 use App\Models\Unity;
+use App\Models\User;
+use App\Models\UserAddedProducts;
+use App\Repositories\EventRepository;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -18,6 +21,8 @@ class ProcessInvoiceJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
     protected $company;
     protected $products_data;
+    protected $eventRepo;
+    protected $user;
     protected $not_inserted_products = [];
 
     /**
@@ -25,10 +30,12 @@ class ProcessInvoiceJob implements ShouldQueue
      *
      * @return void
      */
-    public function __construct(Company $company, array $products_data)
+    public function __construct(Company $company, array $products_data, User $user, EventRepository $eventRepo)
     {
-        $this->products_data = $products_data;
         $this->company = $company;
+        $this->products_data = $products_data;
+        $this->eventRepo = $eventRepo;
+        $this->user = $user;
     }
 
     /**
@@ -40,6 +47,7 @@ class ProcessInvoiceJob implements ShouldQueue
     {
         Log::alert("Entrou no JOB");
         $unities = Unity::all()->keyBy('abbreviation')->toArray();
+        $user_inserted_products = [];
 
         foreach ($this->products_data as $productData) {
 
@@ -60,8 +68,20 @@ class ProcessInvoiceJob implements ShouldQueue
                 ],
             );
 
+            $user_inserted_products[] = [
+                'user_id' => $this->user->id,
+                'price' => $productData['valor_unitario'] ?? 0,
+                'company_id' => $this->company->id,
+                'product_id' => $insertedProduct->id
+            ];
+
             if ($insertedProduct->wasChanged  || $insertedProduct->wasRecentlyCreated) {
                 try {
+
+                    if (!$user_inserted_products) {
+                        UserAddedProducts::insert($user_inserted_products);
+                    }
+
                     CompanyProducts::updateOrCreate(
                         [
                             'product_id' => $insertedProduct->id,
@@ -80,6 +100,8 @@ class ProcessInvoiceJob implements ShouldQueue
                 }
             }
         }
+
+        $this->eventRepo->createProductInsertionEvent(count($this->products_data), $this->company);
     }
 
     public function failed(\Throwable $exception): void
