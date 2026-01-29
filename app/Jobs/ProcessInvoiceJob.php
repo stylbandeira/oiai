@@ -21,7 +21,6 @@ class ProcessInvoiceJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
     protected $company;
     protected $products_data;
-    protected $eventRepo;
     protected $user;
     protected $not_inserted_products = [];
 
@@ -30,11 +29,10 @@ class ProcessInvoiceJob implements ShouldQueue
      *
      * @return void
      */
-    public function __construct(Company $company, array $products_data, User $user, EventRepository $eventRepo)
+    public function __construct(Company $company, array $products_data, User $user)
     {
         $this->company = $company;
         $this->products_data = $products_data;
-        $this->eventRepo = $eventRepo;
         $this->user = $user;
     }
 
@@ -45,7 +43,6 @@ class ProcessInvoiceJob implements ShouldQueue
      */
     public function handle()
     {
-        Log::alert("Entrou no JOB");
         $unities = Unity::all()->keyBy('abbreviation')->toArray();
         $user_inserted_products = [];
 
@@ -101,7 +98,12 @@ class ProcessInvoiceJob implements ShouldQueue
             }
         }
 
-        $this->eventRepo->createProductInsertionEvent(count($this->products_data), $this->company);
+        try {
+            $eventRepo = app(EventRepository::class);
+            $eventRepo->createProductInsertionEvent($this->user, count($this->products_data), $this->company);
+        } catch (\Throwable $th) {
+            Log::alert('Problema com criação de evento de inserção de produtos');
+        }
     }
 
     public function failed(\Throwable $exception): void
