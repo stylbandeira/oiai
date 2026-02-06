@@ -20,10 +20,8 @@ class UserController extends Controller
     {
         $user = Auth::user();
 
-        $dashboardData = new ClientDashboardResource($user);
-
         return response([
-            'dashboardData' => $dashboardData
+            'dashboardData' => new ClientDashboardResource($user)
         ]);
     }
 
