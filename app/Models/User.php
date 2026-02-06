@@ -18,6 +18,9 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     const POINTS = 'points';
+    const ALLOWED_ACTIVITY_TYPE = [
+        Event::TYPE_PRODUCT_INSERT
+    ];
 
     /**
      * The attributes that are mass assignable.
@@ -91,5 +94,10 @@ class User extends Authenticatable
     public function getMonthEconomyAttribute()
     {
         return 0;
+    }
+
+    public function recentActivity()
+    {
+        return $this->hasMany(Event::class)->wherein('type', $this::ALLOWED_ACTIVITY_TYPE)->orderBy('created_at')->take(3);
     }
 }
