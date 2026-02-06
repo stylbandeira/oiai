@@ -49,7 +49,7 @@ class EventRepository
 
         $event = [
             'user_id' => $user->id,
-            'title' => 'product_insertion',
+            'title' => Event::TYPE_PRODUCT_INSERT,
             'description' => ucwords(strtolower($user->name)) . ' adicionou ' . $quantity . ' produtos.',
             'where' => $company->name ?? '',
             'type' => 'product_insert',
