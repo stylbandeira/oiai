@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\AdminUserResource;
+use App\Http\Resources\ClientDashboardResource;
 use App\Models\User;
 use App\Services\ExportService;
 use Illuminate\Http\Request;
@@ -19,12 +20,7 @@ class UserController extends Controller
     {
         $user = Auth::user();
 
-        $dashboardData = [
-            'activeLists' => $user->activeLists ? $user->activeLists->count() : 0,
-            'points' => $user->points,
-            'monthEconomy' => $user->monthEconomy,
-            'reputation' => $user->reputation,
-        ];
+        $dashboardData = new ClientDashboardResource($user);
 
         return response([
             'dashboardData' => $dashboardData
