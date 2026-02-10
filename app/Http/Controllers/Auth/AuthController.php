@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ClientUserResource;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Events\Verified;
@@ -70,7 +71,14 @@ class AuthController extends Controller
 
     public function user(Request $request)
     {
-        return $request->user();
+        return response([
+            'user' => new ClientUserResource($request->user())
+        ]);
+
+        return response([
+            'user' => $request->user(),
+            'email_verified' => $request->user()->hasVerifiedEmail()
+        ]);
     }
 
     public function logout(Request $request)

@@ -64,12 +64,7 @@ Route::post('/email/resend', [AuthController::class, 'resendVerificationEmail'])
 
 // Rotas autenticadas
 Route::middleware(['auth:sanctum', 'verified'])->group(function () {
-    Route::get('/user', function (Request $request) {
-        return response()->json([
-            'user' => $request->user(),
-            'email_verified' => $request->user()->hasVerifiedEmail()
-        ]);
-    });
+    Route::get('/user', [AuthController::class, 'user']);
 
     Route::apiResource('/lists', ListController::class);
     Route::apiResource('/listItems', ListItensController::class);
