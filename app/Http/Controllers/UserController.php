@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\AdminUserResource;
 use App\Http\Resources\ClientDashboardResource;
+use App\Http\Resources\ClientUserResource;
 use App\Models\User;
 use App\Services\ExportService;
 use Illuminate\Http\Request;
@@ -154,6 +155,8 @@ class UserController extends Controller
 
         if ($current_user->type === 'admin') {
             return new AdminUserResource($user);
+        } else if ($current_user->type === 'client') {
+            return new ClientUserResource($user);
         }
     }
 
