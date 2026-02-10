@@ -14,7 +14,9 @@ class Invoice extends Model
         'access_key',
         'user_id',
         'company_id',
-        'receipt_data'
+        'receipt_data',
+        'invoice_data',
+        'pending'
     ];
 
     public function user()

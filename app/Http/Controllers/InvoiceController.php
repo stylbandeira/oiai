@@ -81,41 +81,7 @@ class InvoiceController extends Controller
         }
 
         $invoice_data = $result['data'];
-
         $invoice_code = ($request->invoice_code ? 'NFe' . $request->invoice_code : null) ?? $invoice_data['chave_acesso'];
-
-        $company_data = $invoice_data['emitente'];
-
-        //FIRST OR CREATE DE COMPANY
-        $company = Company::updateOrCreate(
-            [
-                'cnpj' => $company_data['cnpj'],
-                'ie' => $company_data['ie']
-            ],
-            [
-                'name' => $company_data['razao_social'],
-                'cnpj' => $company_data['cnpj'],
-                'raw_address' => $company_data['endereco']
-                    . ' - ' . $company_data['numero']
-                    . ', ' . $company_data['bairro']
-                    . ', ' . $company_data['municipio']
-                    . ', ' . $company_data['uf'],
-                'phone' => $company_data['telefone'],
-            ]
-        );
-
-
-        if ($company->wasChanged  || $company->wasRecentlyCreated) {
-            $address = Address::firstOrCreate([
-                'area' => $company_data['bairro'],
-                'city' => $company_data['municipio'],
-                'street' => $company_data['endereco'],
-                'number' => $company_data['numero'],
-            ]);
-
-            $company->address_id = $address->id;
-            $company->save();
-        }
 
         //FIRST OR CREATE DE INVOICE
         $invoice = Invoice::firstOrCreate(
@@ -125,6 +91,8 @@ class InvoiceController extends Controller
             [
                 'user_id' => $user->id,
                 'receipt_data' => $invoice_data['protocolo']['data_recebimento'] ? DateTime::createFromFormat('d/m/Y H:i:s', $invoice_data['protocolo']['data_recebimento']) : Carbon::today(),
+                'invoice_data' => json_encode($invoice_data),
+                'pending' => true
             ]
         );
 
@@ -134,16 +102,6 @@ class InvoiceController extends Controller
                 'message' => 'NFCe já cadastrada',
             ], 409);
         }
-
-        //INSERE OS PRODUTOS
-        //TODO - TRANSFORMAR EM UM JOB DE CRIAÇÃO DE PRODUTOS DEPOIS
-        $products_data = $invoice_data['produtos'];
-
-
-        ProcessInvoiceJob::dispatch($company, $products_data, $user);
-
-        //ATRIBUIÇÃO DE PONTOS AO USUÁRIO QUE CRIOU A NOTA
-        $this->userRepo->addPoints($user->id, count($products_data));
 
         return response([
             'success' => true,
