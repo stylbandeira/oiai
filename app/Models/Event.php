@@ -21,4 +21,9 @@ class Event extends Model
         'points',
         'link',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

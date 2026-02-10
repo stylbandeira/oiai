@@ -18,7 +18,9 @@ class EventObserver
     {
         switch ($event->type) {
             case 'product_insert':
-                //TODO - SEND NOTIFICATION
+                $user = $event->user;
+                $user->has_notification = true;
+                $user->save();
                 break;
 
             default:

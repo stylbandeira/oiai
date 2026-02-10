@@ -6,6 +6,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 
 use App\Notifications\ResetPasswordNotification;
 use App\Notifications\VerifyEmailNotification;
+use Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -35,6 +36,7 @@ class User extends Authenticatable
         'cpf',
         'status',
         'points',
+        'hasNotification'
     ];
 
     protected $attributes = [
@@ -98,6 +100,16 @@ class User extends Authenticatable
 
     public function recentActivity()
     {
-        return $this->hasMany(Event::class)->wherein('type', $this::ALLOWED_ACTIVITY_TYPE)->orderBy('created_at')->take(3);
+        return $this->hasMany(Event::class)->wherein('type', $this::ALLOWED_ACTIVITY_TYPE)->orderBy('created_at', 'DESC')->take(3);
+    }
+
+    public function events()
+    {
+        return $this->hasMany(Event::class);
+    }
+
+    public function getNotificationsAttribute()
+    {
+        return $this->hasNotification ? 0 : $this->events()->where('checked', false)->count();
     }
 }
