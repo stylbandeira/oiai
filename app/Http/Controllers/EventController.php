@@ -17,7 +17,10 @@ class EventController extends Controller
 
     public function checkAll(Request $request)
     {
-        $events = $request->user()->events;
-        Log::alert($events);
+        Event::where('user_id', $request->user()->id)->update(['checked' => true]);
+
+        return response([
+            'message' => 'Todas as notificações marcadas como lidas.'
+        ]);
     }
 }
