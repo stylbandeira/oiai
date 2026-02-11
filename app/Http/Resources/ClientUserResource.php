@@ -19,6 +19,9 @@ class ClientUserResource extends JsonResource
             'email' => $this->email,
             'hasNotification' => boolval($this->has_notification ?? false),
             'notifications' => $this->notifications,
+            'notificationList' => $this->whenLoaded('events', function () {
+                return ClientEventResource::collection($this->events);
+            }),
             'name' => $this->name,
             'points' => $this->points,
             'token' => $this->token,
