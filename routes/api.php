@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\EventController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\ListController;
 use App\Http\Controllers\ListItensController;
@@ -75,6 +76,10 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     // INVOICES
     Route::post('/invoice/process', [InvoiceController::class, 'processInvoice']);
     Route::post('/invoice/processXML', [InvoiceController::class, 'processXML']);
+
+    //EVENTS
+    Route::apiResource('/events', EventController::class);
+    Route::post('/events/check-all', [EventController::class, 'checkAll']);
 
     Route::get('/dashboard-data', [UserController::class, 'dashboardData']);
 
