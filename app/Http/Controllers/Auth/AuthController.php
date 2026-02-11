@@ -71,13 +71,14 @@ class AuthController extends Controller
 
     public function user(Request $request)
     {
-        return response([
-            'user' => new ClientUserResource($request->user())
-        ]);
+        $user = User::with([
+            'events' => function ($query) {
+                $query->where('checked', 0);
+            }
+        ])->find($request->user()->id);
 
         return response([
-            'user' => $request->user(),
-            'email_verified' => $request->user()->hasVerifiedEmail()
+            'user' => new ClientUserResource($user)
         ]);
     }
 
