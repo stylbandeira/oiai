@@ -7,12 +7,14 @@ use App\Models\Address;
 use App\Models\Company;
 use App\Models\Invoice;
 use App\Repositories\UserRepository;
+use App\Services\NFCeHtmlParserService;
 use App\Services\NFCeScraperService;
 use App\Services\NFCeXMLParserService;
 use Carbon\Carbon;
 use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class InvoiceController extends Controller
@@ -62,26 +64,53 @@ class InvoiceController extends Controller
     public function processInvoice(Request $request)
     {
         $user = Auth::user();
+        $receipt_data = '';
+        $invoice_data = [];
 
         $request->validate([
-            'qr_code_data' => 'required|string',
+            'qr_code_data' => 'string',
             'invoice_code' => 'string'
         ]);
 
         $qrData = $request->input('qr_code_data');
 
-        $result = $this->scraper->scrapeFromQRCode($qrData);
+        if ($request->invoice_code) {
+            $response = Http::post('https://dfe-portal.svrs.rs.gov.br/Dfe/ConsultaPublicaDfe', [
+                'sistema' => 'Dfe',
+                'EhConsultaPublicaSiteSefaz' => True,
+                'Ambiente' => 1,
+                'ChaveAcessoDfe' => $request->invoice_code
+            ]);
 
-        if ($result['status'] === 'error') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erro ao tentar capturar dados da NFCe',
-                'qr_data' => $qrData
-            ], 400);
+            if ($response->successful()) {
+                $scraper = new NFCeHtmlParserService();
+                $result = $scraper->parse($response);
+                $invoice_data = $result;
+                $receipt_data = explode('-', $result['dados_nota']['data_emissao'])[0];;
+            } else {
+                $error = $response->body();
+                return response([
+                    'error' => $error,
+                    'message' => 'Não foi possível verificar a nota fiscal'
+                ], 400);
+            }
+        } else {
+            $result = $this->scraper->scrapeFromQRCode($qrData);
+
+            if ($result['status'] === 'error') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Erro ao tentar capturar dados da NFCe',
+                    'qr_data' => $qrData
+                ], 400);
+            }
+            $invoice_data = $result['data'];
+            $receipt_data = $invoice_data['protocolo']['data_recebimento'];
         }
 
-        $invoice_data = $result['data'];
+
         $invoice_code = ($request->invoice_code ? 'NFe' . $request->invoice_code : null) ?? $invoice_data['chave_acesso'];
+
 
         //FIRST OR CREATE DE INVOICE
         $invoice = Invoice::firstOrCreate(
@@ -90,7 +119,7 @@ class InvoiceController extends Controller
             ],
             [
                 'user_id' => $user->id,
-                'receipt_data' => $invoice_data['protocolo']['data_recebimento'] ? DateTime::createFromFormat('d/m/Y H:i:s', $invoice_data['protocolo']['data_recebimento']) : Carbon::today(),
+                'receipt_data' => $receipt_data ? DateTime::createFromFormat('d/m/Y H:i:s', $receipt_data) : Carbon::today(),
                 'invoice_data' => json_encode($invoice_data),
                 'pending' => true
             ]

@@ -99,7 +99,16 @@ class NFCeScraperService
             // Se for apenas chave, monta com valores padrão
             if (preg_match('/^\d{44}$/', $qrData)) {
                 $estado = substr($qrData, 0, 2);
-                $urlsPorEstado = [/* mesma lista acima */];
+                $urlsPorEstado = [
+                    '26' => 'https://nfce.sefaz.pe.gov.br/nfce/consulta', // PE
+                    '35' => 'https://www.nfce.fazenda.sp.gov.br/consulta', // SP
+                    '31' => 'https://nfce.fazenda.mg.gov.br/portalnfce', // MG
+                    '53' => 'https://www.fazenda.df.gov.br/nfce', // DF
+                    '41' => 'https://www.nfce.fazenda.pr.gov.br/consulta', // PR
+                    '43' => 'https://www.sefaz.rs.gov.br/NFCE/NFCE-COM.aspx', // RS
+                    '32' => 'https://nfe.es.gov.br/consulta', // ES
+                    // Adicione outros estados conforme necessário
+                ];
                 $baseUrl = $urlsPorEstado[$estado] ?? 'https://nfce.sefaz.pe.gov.br/nfce/consulta';
                 return $baseUrl . "?p=" . $qrData . "|2|1|1|117A7509F59D4D306ED989C0E5689A01E7A011E9";
             }

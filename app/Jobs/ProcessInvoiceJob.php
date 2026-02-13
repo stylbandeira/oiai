@@ -42,8 +42,9 @@ class ProcessInvoiceJob implements ShouldQueue
 
     public function processPendingInvoices()
     {
-        $invoices = Invoice::where('created_at', '>=', now()->subDay())
-            ->where('pending', true)
+        $invoices = Invoice::where('created_at', '>=', now()->subMonth())
+            ->where('invoice_data', '!=', null)
+            ->where('pending', 1)
             ->get();
 
         foreach ($invoices as $invoice) {
@@ -58,118 +59,106 @@ class ProcessInvoiceJob implements ShouldQueue
      */
     public function processInvoice(Invoice $invoice)
     {
-        Log::alert([
-            'Invoice data JSON' => json_decode($invoice->invoice_data)
-        ]);
+        $user_inserted_products = [];
+        $invoice_data = json_decode($invoice->invoice_data);
 
-        try {
-            $user_inserted_products = [];
-            $invoice_data = json_decode($invoice->invoice_data);
+        $products_data = $invoice_data->produtos;
+        $user = User::find($invoice->user_id);
 
-            $products_data = $invoice_data->produtos;
-            $user = User::find($invoice->user_id);
+        //FIRST OR CREATE DE COMPANY
+        $company_data = $invoice_data->emitente;
+        $company = Company::updateOrCreate(
+            [
+                'cnpj' => $company_data->cnpj,
+                'ie' => $company_data->ie
+            ],
+            [
+                'name' => $company_data->razao_social,
+                'cnpj' => $company_data->cnpj,
+                'raw_address' => $company_data->endereco
+                    . ' - ' . ($company_data->numero ?? '')
+                    . ', ' . $company_data->bairro
+                    . ', ' . $company_data->municipio
+                    . ', ' . $company_data->uf,
+                'phone' => ($company_data->telefone ?? ''),
+            ]
+        );
 
-            //FIRST OR CREATE DE COMPANY
-            $company_data = $invoice_data->emitente;
-            $company = Company::updateOrCreate(
+        if ($company->wasChanged  || $company->wasRecentlyCreated) {
+            $address = Address::firstOrCreate([
+                'area' => $company_data->bairro,
+                'city' => $company_data->municipio,
+                'street' => $company_data->endereco,
+                'number' => ($company_data->numero ?? ''),
+            ]);
+
+            $company->address_id = $address->id;
+            $company->save();
+        }
+
+        foreach ($products_data as $productData) {
+
+            //VERIFICA SE É PRODUTO SEM EAN
+            $insert = !is_numeric($productData->ean) ?
+                ['sku' => $productData->codigo] :
+                ['ean' => $productData->ean];
+
+            $insertedProduct = Product::updateOrCreate(
+                $insert,
                 [
-                    'cnpj' => $company_data->cnpj,
-                    'ie' => $company_data->ie
+                    'sku' => $productData->codigo,
+                    'description' => $productData->descricao,
+                    'name' => $productData->descricao,
+                    'unit_id' => $this->unities[strtolower($productData->unidade)]['id'] ?? 1,
+                    'quantity' => 1,
+                    'average_price' => $productData->valor_unitario
                 ],
-                [
-                    'name' => $company_data->razao_social,
-                    'cnpj' => $company_data->cnpj,
-                    'raw_address' => $company_data->endereco
-                        . ' - ' . $company_data->numero
-                        . ', ' . $company_data->bairro
-                        . ', ' . $company_data->municipio
-                        . ', ' . $company_data->uf,
-                    'phone' => $company_data->telefone,
-                ]
             );
 
-            if ($company->wasChanged  || $company->wasRecentlyCreated) {
-                $address = Address::firstOrCreate([
-                    'area' => $company_data->bairro,
-                    'city' => $company_data->municipio,
-                    'street' => $company_data->endereco,
-                    'number' => $company_data->numero,
-                ]);
+            $user_inserted_products[] = [
+                'user_id' => $user->id,
+                'price' => $productData->valor_unitario ?? 0,
+                'company_id' => $company->id,
+                'product_id' => $insertedProduct->id
+            ];
 
-                $company->address_id = $address->id;
-                $company->save();
-            }
+            if ($insertedProduct->wasChanged  || $insertedProduct->wasRecentlyCreated) {
+                try {
 
-            foreach ($products_data as $productData) {
-
-                //VERIFICA SE É PRODUTO SEM EAN
-                $insert = !is_numeric($productData->ean) ?
-                    ['sku' => $productData->codigo] :
-                    ['ean' => $productData->ean];
-
-                $insertedProduct = Product::updateOrCreate(
-                    $insert,
-                    [
-                        'sku' => $productData->codigo,
-                        'description' => $productData->descricao,
-                        'name' => $productData->descricao,
-                        'unit_id' => $unities[strtolower($productData->unidade)]['id'] ?? 1,
-                        'quantity' => 1,
-                        'average_price' => $productData->valor_unitario
-                    ],
-                );
-
-                $user_inserted_products[] = [
-                    'user_id' => $user->id,
-                    'price' => $productData->valor_unitario ?? 0,
-                    'company_id' => $company->id,
-                    'product_id' => $insertedProduct->id
-                ];
-
-                if ($insertedProduct->wasChanged  || $insertedProduct->wasRecentlyCreated) {
-                    try {
-
-                        if (!$user_inserted_products) {
-                            UserAddedProducts::insert($user_inserted_products);
-                        }
-
-                        CompanyProducts::updateOrCreate(
-                            [
-                                'product_id' => $insertedProduct->id,
-                                'company_id' => $company->id,
-                            ],
-                            [
-                                'average_price' => $productData->valor_unitario
-                            ]
-                        );
-                    } catch (\Throwable $th) {
-                        $this->not_inserted_products[] = [
-                            'product_error',
-                            'product_data' => $productData,
-                            'company' => $company
-                        ];
+                    if (!$user_inserted_products) {
+                        UserAddedProducts::insert($user_inserted_products);
                     }
+
+                    CompanyProducts::updateOrCreate(
+                        [
+                            'product_id' => $insertedProduct->id,
+                            'company_id' => $company->id,
+                        ],
+                        [
+                            'average_price' => $productData->valor_unitario
+                        ]
+                    );
+                } catch (\Throwable $th) {
+                    $this->not_inserted_products[] = [
+                        'product_error',
+                        'product_data' => $productData,
+                        'company' => $company
+                    ];
                 }
             }
-            $userRepo = new UserRepository($user);
-            $userRepo->addPoints($user->id, count($products_data));
-
-            try {
-                $eventRepo = app(EventRepository::class);
-                $eventRepo->createProductInsertionEvent($user, count($products_data), $company);
-            } catch (\Throwable $th) {
-                Log::alert('Problema com criação de evento de inserção de produtos');
-            }
-
-            $invoice->pending = false;
-            $invoice->save();
-        } catch (\Throwable $th) {
-            Log::alert([
-                'Invoice não processado: ' => $invoice->id,
-                'Errorwww' => $th->getMessage(),
-                'Line' => $th->getLine()
-            ]);
         }
+        $userRepo = new UserRepository($user);
+        $userRepo->addPoints($user->id, count($products_data));
+
+        try {
+            $eventRepo = app(EventRepository::class);
+            $eventRepo->createProductInsertionEvent($user, count($products_data), $company);
+        } catch (\Throwable $th) {
+            Log::alert('Problema com criação de evento de inserção de produtos');
+        }
+
+        $invoice->pending = false;
+        $invoice->save();
     }
 
     public function failed(\Throwable $exception): void
