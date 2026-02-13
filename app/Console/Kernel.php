@@ -17,8 +17,26 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->job(new ProcessInvoiceJob())->everyFiveMinutes();
+        // Versão 1: Com log detalhado
+        $schedule->job(new ProcessInvoiceJob())
+            ->everyTenMinutes()
+            ->before(function () {
+                Log::info('Antes de despachar ProcessInvoiceJob', [
+                    'memory' => memory_get_usage(),
+                    'time' => now()
+                ]);
+            })
+            ->after(function () {
+                Log::info('Depois de despachar ProcessInvoiceJob');
+            })
+            ->onSuccess(function () {
+                Log::info('ProcessInvoiceJob despachado com sucesso');
+            })
+            ->onFailure(function () {
+                Log::error('Falha ao despachar ProcessInvoiceJob');
+            });
 
+        // Seu heartbeat original
         $schedule->call(function () {
             Log::info('Scheduler heartbeat: ' . now());
         })->everyMinute();
