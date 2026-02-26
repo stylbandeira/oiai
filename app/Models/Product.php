@@ -26,6 +26,7 @@ class Product extends Model
         'category_id' => 1,
         'listAdded' => 0,
         'description' => '',
+        'mentioned_quantity_variant'
     ];
 
     public function userAddedProducts()
@@ -41,5 +42,16 @@ class Product extends Model
     public function unity()
     {
         return $this->belongsTo(Unity::class, 'unit_id');
+    }
+
+    public function getMentionedQuantityVariantAttribute()
+    {
+        if ($this->mentioned_quantity > 100) {
+            return 'perfect';
+        } else if ($this->mentioned_quantity > 50) {
+            return 'secondary';
+        } else {
+            return 'destructive';
+        }
     }
 }

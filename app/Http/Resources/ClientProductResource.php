@@ -25,6 +25,8 @@ class ClientProductResource extends JsonResource
             'unity_id' => $this->whenLoaded('unity', $this->unity->id),
             'unity_quantity' => $this->whenLoaded('unity', $this->quantity),
             'category' => $this->whenLoaded('category', $this->category->name),
+            'mentioned_quantity' => $this->mentioned_quantity,
+            'mentioned_quantity_variant' => $this->mentioned_quantity_variant
         ];
     }
 }

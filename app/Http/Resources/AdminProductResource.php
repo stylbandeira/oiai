@@ -28,8 +28,11 @@ class AdminProductResource extends JsonResource
             'deleted_at' => $this->deleted_at,
 
             'unity' => $this->whenLoaded('unity', $this->unity->name),
+            'unity_id' => $this->whenLoaded('unity', $this->unity->id),
             'quantity' => $this->whenLoaded('unity', $this->quantity),
             'category' => $this->whenLoaded('category', $this->category->name),
+            'mentioned_quantity' => $this->mentioned_quantity,
+            'mentioned_quantity_variant' => $this->mentioned_quantity_variant
         ];
     }
 }
