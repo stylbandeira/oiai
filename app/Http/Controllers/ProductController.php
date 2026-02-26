@@ -7,6 +7,7 @@ use App\Http\Resources\ClientProductResource;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\Unity;
+use App\Repositories\ProductRepository;
 use App\Rules\ExistsOr;
 use App\Services\ExportService;
 use Illuminate\Http\Request;
@@ -18,6 +19,13 @@ use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
 {
+    protected $productRepo;
+
+    public function __construct(ProductRepository $productRepo)
+    {
+        $this->productRepo = $productRepo;
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -25,24 +33,11 @@ class ProductController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Product::query();
-
-        if ($request->has('search') && !empty($request->search)) {
-            $searchTerm = '%' . $request->search . '%';
-            $query->where(function ($q) use ($searchTerm) {
-                $q->where('name', 'like', $searchTerm)
-                    ->orWhere('sku', 'like', $searchTerm);
-            });
-        }
 
         $perPage = $request->per_page ?? 15;
-
-        $products = $query->with(['category', 'unity'])
-            ->orderBy('listAdded', 'desc')
-            ->orderBy('name', 'asc')
-            ->limit(1500)
+        $products = $this->productRepo
+            ->list($request->search ?? '', ['category', 'unity'])
             ->paginate($perPage);
-
         if ($request->user()->type === 'admin') {
             return AdminProductResource::collection($products);
         }
