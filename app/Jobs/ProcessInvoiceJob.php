@@ -97,7 +97,6 @@ class ProcessInvoiceJob implements ShouldQueue
         }
 
         foreach ($products_data as $productData) {
-
             //VERIFICA SE É PRODUTO SEM EAN
             $insert = !is_numeric($productData->ean) ?
                 ['sku' => $productData->codigo] :
@@ -123,11 +122,13 @@ class ProcessInvoiceJob implements ShouldQueue
             ];
 
             if ($insertedProduct->wasChanged  || $insertedProduct->wasRecentlyCreated) {
-                try {
 
-                    if (!$user_inserted_products) {
-                        UserAddedProducts::insert($user_inserted_products);
-                    }
+                if ($insertedProduct->wasChanged) {
+                    $insertedProduct->mentioned_quantity++;
+                    $insertedProduct->save();
+                }
+
+                try {
 
                     CompanyProducts::updateOrCreate(
                         [
@@ -147,6 +148,16 @@ class ProcessInvoiceJob implements ShouldQueue
                 }
             }
         }
+
+        try {
+            UserAddedProducts::insert($user_inserted_products);
+        } catch (\Throwable $th) {
+            Log::alert([
+                'error' => 'UserAddedProducts not working',
+                'message' => $th->getMessage()
+            ]);
+        }
+
         $userRepo = new UserRepository($user);
         $userRepo->addPoints($user->id, count($products_data));
 
