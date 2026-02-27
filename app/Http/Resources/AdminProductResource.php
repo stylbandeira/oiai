@@ -2,11 +2,17 @@
 
 namespace App\Http\Resources;
 
-use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
-
-class AdminProductResource extends JsonResource
+class AdminProductResource extends BaseProductResource
 {
+    protected function getUserSpecificFields(): array
+    {
+        return [
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
+            'deleted_at' => $this->deleted_at,
+            'quantity' => $this->whenLoaded('unity', $this->quantity),
+        ];
+    }
     /**
      * Transform the resource into an array.
      *
@@ -15,25 +21,6 @@ class AdminProductResource extends JsonResource
      */
     public function toArray($request)
     {
-        return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'sku' => $this->sku,
-            'img' => $this->img ? config('app.url') . '/storage/' . $this->img : null,
-            'ean' => $this->ean,
-            'average_price' => $this->average_price,
-
-            //Only for Admin
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
-            'deleted_at' => $this->deleted_at,
-
-            'unity' => $this->whenLoaded('unity', $this->unity->name),
-            'unity_id' => $this->whenLoaded('unity', $this->unity->id),
-            'quantity' => $this->whenLoaded('unity', $this->quantity),
-            'category' => $this->whenLoaded('category', $this->category->name),
-            'mentioned_quantity' => $this->mentioned_quantity,
-            'mentioned_quantity_variant' => $this->mentioned_quantity_variant
-        ];
+        return parent::toArray($request);
     }
 }

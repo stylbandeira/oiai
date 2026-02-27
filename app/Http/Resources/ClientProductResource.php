@@ -2,11 +2,18 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Product;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
-class ClientProductResource extends JsonResource
+class ClientProductResource extends BaseProductResource
 {
+    protected function getUserSpecificFields(): array
+    {
+        return [];
+    }
+
     /**
      * Transform the resource into an array.
      *
@@ -15,19 +22,6 @@ class ClientProductResource extends JsonResource
      */
     public function toArray($request)
     {
-        return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'sku' => $this->sku,
-            'img' => $this->img,
-            'ean' => $this->ean,
-            'average_price' => floatval($this->average_price),
-            'unity' => $this->whenLoaded('unity', $this->unity->abbreviation),
-            'unity_id' => $this->whenLoaded('unity', $this->unity->id),
-            'unity_quantity' => $this->whenLoaded('unity', $this->quantity),
-            'category' => $this->whenLoaded('category', $this->category->name),
-            'mentioned_quantity' => $this->mentioned_quantity,
-            'mentioned_quantity_variant' => $this->mentioned_quantity_variant
-        ];
+        return parent::toArray($request);
     }
 }
