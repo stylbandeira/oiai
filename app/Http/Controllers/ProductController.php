@@ -36,8 +36,9 @@ class ProductController extends Controller
 
         $perPage = $request->per_page ?? 15;
         $products = $this->productRepo
-            ->list($request->user(), $request->search ?? '', ['category', 'unity'])
+            ->list($request->user(), $request, ['category', 'unity'])
             ->paginate($perPage);
+
         if ($request->user()->type === 'admin') {
             return AdminProductResource::collection($products);
         }
@@ -318,6 +319,23 @@ class ProductController extends Controller
 
         return response([
             'message' => 'Produto deletada com sucesso!'
+        ]);
+    }
+
+    public function bulkValidate(Request $request)
+    {
+        $request->validate([
+            'product_ids' => 'required|array',
+            'product_ids.*' => 'exists:products,id',
+            'validated' => 'required|boolean'
+        ]);
+
+        Product::whereIn('id', $request->product_ids)
+            ->update(['validated' => $request->validated]);
+
+        return response([
+            'message' => 'Produtos atualizados com sucesso!',
+            'count' => count($request->product_ids)
         ]);
     }
 }
