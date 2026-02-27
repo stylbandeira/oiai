@@ -36,7 +36,7 @@ class ProductController extends Controller
 
         $perPage = $request->per_page ?? 15;
         $products = $this->productRepo
-            ->list($request->search ?? '', ['category', 'unity'])
+            ->list($request->user(), $request->search ?? '', ['category', 'unity'])
             ->paginate($perPage);
         if ($request->user()->type === 'admin') {
             return AdminProductResource::collection($products);
@@ -53,6 +53,8 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
+        $user = $request->user();
+
         $validate = Validator::make($request->all(), [
             'name' => 'required|string',
             'quantity' => 'required|integer',
@@ -72,6 +74,10 @@ class ProductController extends Controller
         if ($request->hasFile('img')) {
             $imgPath = $request->file('img')->store('products/images', 'public');
             $validatedData['img'] = $imgPath;
+        }
+
+        if ($user->type === 'client') {
+            $validatedData['validated'] = false;
         }
 
         $product = Product::create($validatedData);
