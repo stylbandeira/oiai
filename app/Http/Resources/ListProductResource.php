@@ -25,6 +25,8 @@ class ListProductResource extends JsonResource
             'name' => $productLoaded ? $this->product->name : null,
             'sku' => $productLoaded ? $this->product->sku : null,
             'img' => $productLoaded ? $this->product->img : null,
+            'ean' => $productLoaded ? $this->product->ean : null,
+            'ean' => $this->ean,
             'completed' => $this->completed,
             'average_price' => $productLoaded ? floatval($this->product->average_price) : 0,
             'quantity' => $this->quantity,
