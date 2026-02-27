@@ -40,8 +40,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::apiResource('/companies', CompanyController::class);
         Route::post('/products/import', [ProductController::class, 'import']);
         Route::get('/products/export', [ProductController::class, 'export']);
+        Route::post('/products/bulk-validate', [ProductController::class, 'bulkValidate']);
         Route::apiResource('/products', ProductController::class);
-        // Route::apiResource('/categories', ProductCategoryController::class);
         Route::apiResource('/users', UserController::class);
     });
 
