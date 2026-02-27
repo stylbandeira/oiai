@@ -19,14 +19,14 @@ class Product extends Model
         'average_price',
         'category_id',
         'ean',
-        'description'
+        'description',
+        'validated'
     ];
 
     protected $attributes = [
         'category_id' => 1,
         'listAdded' => 0,
         'description' => '',
-        'mentioned_quantity_variant'
     ];
 
     public function userAddedProducts()
