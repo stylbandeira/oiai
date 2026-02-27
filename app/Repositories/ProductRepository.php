@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Request;
 
 class ProductRepository
 {
@@ -27,16 +28,26 @@ class ProductRepository
      * @param array $with
      * @return Product
      */
-    public function list(User $user, String $search = '', array $with)
+    public function list(User $user, Request $request, array $with)
     {
         $query = $this->product->with($with);
 
-        if ($search != '') {
-            $searchTerm = '%' . $search . '%';
+        if ($request->has('search')) {
+            $searchTerm = '%' . $request->search . '%';
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('name', 'like', $searchTerm)
                     ->orWhere('sku', 'like', $searchTerm);
             });
+        }
+
+        if ($request->has('validated')) {
+            if ($request->validated === 'pendentes') {
+                $query->where('validated', false);
+            }
+
+            if ($request->validated === 'validados') {
+                $query->where('validated', true);
+            }
         }
 
         if ($user->type === 'client') {
