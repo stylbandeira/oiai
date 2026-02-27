@@ -20,6 +20,7 @@ class ClientProductResource extends JsonResource
             'name' => $this->name,
             'sku' => $this->sku,
             'img' => $this->img,
+            'ean' => $this->ean,
             'average_price' => floatval($this->average_price),
             'unity' => $this->whenLoaded('unity', $this->unity->abbreviation),
             'unity_id' => $this->whenLoaded('unity', $this->unity->id),
