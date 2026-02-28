@@ -101,6 +101,10 @@ class ProductController extends Controller
 
         $product = Product::with(['category', 'unity'])->find($id);
 
+        if ($user->type === 'client') {
+            return new ClientProductResource($product);
+        }
+
         return new AdminProductResource($product);
     }
 
@@ -125,6 +129,12 @@ class ProductController extends Controller
             return response([
                 'errors' => $validator->errors()
             ], 400);
+        }
+
+        if ($request->user()->type === 'client' && $request->validated === false) {
+            return response([
+                'message' => 'Você não tem permissão para alterar esse produto',
+            ], 403);
         }
 
         $validatedData = $request->all();
@@ -331,7 +341,10 @@ class ProductController extends Controller
         ]);
 
         Product::whereIn('id', $request->product_ids)
-            ->update(['validated' => $request->validated]);
+            ->update([
+                'validated' => $request->validated,
+                'validated_by' => $request->user()->id
+            ]);
 
         return response([
             'message' => 'Produtos atualizados com sucesso!',
