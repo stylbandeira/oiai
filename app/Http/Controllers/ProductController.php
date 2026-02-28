@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\Unity;
 use App\Repositories\ProductRepository;
+use App\Repositories\UserRepository;
 use App\Rules\ExistsOr;
 use App\Services\ExportService;
 use Illuminate\Http\Request;
@@ -20,10 +21,12 @@ use Illuminate\Validation\Rule;
 class ProductController extends Controller
 {
     protected $productRepo;
+    protected $userRepo;
 
-    public function __construct(ProductRepository $productRepo)
+    public function __construct(ProductRepository $productRepo, UserRepository $userRepo)
     {
         $this->productRepo = $productRepo;
+        $this->userRepo = $userRepo;
     }
 
     /**
@@ -345,6 +348,20 @@ class ProductController extends Controller
                 'validated' => $request->validated,
                 'validated_by' => $request->user()->id
             ]);
+
+        //Adiciona pontos somente uma vez
+        $created_by_user_ids = Product::whereIn('id', $request->product_ids)
+            ->where('validated_by', null)
+            ->get()
+            ->pluck('created_by')
+            ->filter()
+            ->unique()
+            ->values();
+
+        foreach ($created_by_user_ids as $id) {
+            $this->userRepo->addPoints($id, 3);
+        }
+        //Adiciona pontos somente uma vez
 
         return response([
             'message' => 'Produtos atualizados com sucesso!',
