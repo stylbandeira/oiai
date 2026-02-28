@@ -66,7 +66,7 @@ class ListController extends Controller
         //Cria lista
         $list = ItensList::create([
             'user_id' => $user->id,
-            'name' => $request->listName,
+            'name' => $request->name,
             'favorite' => false,
             'total' => 0,
         ]);
