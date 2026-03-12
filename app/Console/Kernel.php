@@ -2,6 +2,7 @@
 
 namespace App\Console;
 
+use App\Jobs\AveragePriceJob;
 use App\Jobs\ProcessInvoiceJob;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
@@ -34,6 +35,12 @@ class Kernel extends ConsoleKernel
             })
             ->onFailure(function () {
                 Log::error('Falha ao despachar ProcessInvoiceJob');
+            });
+
+        $schedule->job(new AveragePriceJob())
+            ->everyMinute()
+            ->onFailure(function () {
+                Log::error('Falha ao despachar AveragePriceJob');
             });
 
         // Seu heartbeat original

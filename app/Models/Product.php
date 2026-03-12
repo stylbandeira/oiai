@@ -9,6 +9,7 @@ class Product extends Model
 {
     use HasFactory;
     protected $table = 'products';
+    const AVERAGE_PRICE_JOB_CONSTANCY_DAYS = 1;
 
     protected $fillable = [
         'unit_id',

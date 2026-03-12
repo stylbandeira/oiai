@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Models\UserAddedProducts;
 use App\Repositories\EventRepository;
 use App\Repositories\UserRepository;
+use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -46,6 +47,8 @@ class ProcessInvoiceJob implements ShouldQueue
             ->where('invoice_data', '!=', null)
             ->where('pending', 1)
             ->get();
+
+        Log::alert(['Quantos?' => count($invoices)]);
 
         foreach ($invoices as $invoice) {
             $this->processInvoice($invoice);
@@ -110,16 +113,10 @@ class ProcessInvoiceJob implements ShouldQueue
                     'name' => $productData->descricao,
                     'unit_id' => $this->unities[strtolower($productData->unidade)]['id'] ?? 1,
                     'quantity' => 1,
-                    'average_price' => $productData->valor_unitario
+                    'average_price' => $productData->valor_unitario,
+                    'created_by' => $user->id
                 ],
             );
-
-            $user_inserted_products[] = [
-                'user_id' => $user->id,
-                'price' => $productData->valor_unitario ?? 0,
-                'company_id' => $company->id,
-                'product_id' => $insertedProduct->id
-            ];
 
             if ($insertedProduct->wasChanged  || $insertedProduct->wasRecentlyCreated) {
 
@@ -130,7 +127,7 @@ class ProcessInvoiceJob implements ShouldQueue
 
                 try {
 
-                    CompanyProducts::updateOrCreate(
+                    $company_product = CompanyProducts::firstOrCreate(
                         [
                             'product_id' => $insertedProduct->id,
                             'company_id' => $company->id,
@@ -139,6 +136,15 @@ class ProcessInvoiceJob implements ShouldQueue
                             'average_price' => $productData->valor_unitario
                         ]
                     );
+
+                    $user_inserted_products[] = [
+                        'user_id' => $user->id,
+                        'price' => $productData->valor_unitario ?? 0,
+                        'company_id' => $company->id,
+                        'product_id' => $insertedProduct->id,
+                        'created_at' => Carbon::now(),
+                        'company_product_id' => $company_product->id
+                    ];
                 } catch (\Throwable $th) {
                     $this->not_inserted_products[] = [
                         'product_error',

@@ -3,6 +3,7 @@
 namespace App\Observers;
 
 use App\Models\Product;
+use App\Models\UserAddedProducts;
 use App\Repositories\UserRepository;
 use Illuminate\Support\Facades\Auth;
 
@@ -19,7 +20,6 @@ class ProductObserver
     public function creating(Product $product)
     {
         $product->mentioned_quantity++;
-        $product->created_by = $this->user->id;
     }
 
     public function updating(Product $product)
