@@ -51,7 +51,10 @@ class ProductRepository
         }
 
         if ($user->type === 'client') {
-            $query->where('validated', true);
+            $query->where('validated', true)
+                ->with(['userFavorites' => function ($query) use ($user) {
+                    $query->where('user_id', $user->id);
+                }]);
         }
 
         return $query->orderBy('mentioned_quantity', 'desc')
