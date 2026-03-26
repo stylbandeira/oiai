@@ -2,16 +2,14 @@
 
 namespace App\Http\Resources;
 
-use App\Models\Product;
-use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
-
 class ClientProductResource extends BaseProductResource
 {
     protected function getUserSpecificFields(): array
     {
-        return [];
+        return [
+            'isFavorite' => boolval(count($this->userFavorites))
+
+        ];
     }
 
     /**
