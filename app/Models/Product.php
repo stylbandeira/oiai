@@ -45,6 +45,11 @@ class Product extends Model
         return $this->belongsTo(Unity::class, 'unit_id');
     }
 
+    public function userFavorites()
+    {
+        return $this->belongsToMany(User::class, 'favorite_products', 'product_id', 'user_id');
+    }
+
     public function getMentionedQuantityVariantAttribute()
     {
         if ($this->mentioned_quantity > 100) {
