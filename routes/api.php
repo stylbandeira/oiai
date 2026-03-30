@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\FavoriteProductsController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\ListController;
 use App\Http\Controllers\ListItensController;
@@ -72,6 +73,8 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
 
     // PRODUCTS
     Route::get('/products', [ProductController::class, 'index']);
+    //FAVORITE-PRODUCTS
+    Route::post('/products/{product}/favorite', [FavoriteProductsController::class, 'favorite']);
 
     // INVOICES
     Route::post('/invoice/process', [InvoiceController::class, 'processInvoice']);
