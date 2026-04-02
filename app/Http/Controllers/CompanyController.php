@@ -66,8 +66,6 @@ class CompanyController extends Controller
             ->withCount('products')
             ->paginate($perPage);
 
-        Log::alert($companies);
-
         if ($request->user()->type === 'admin') {
             return AdminCompanyResource::collection($companies);
         }
@@ -145,12 +143,48 @@ class CompanyController extends Controller
         }
 
         if ($user->type === 'company') {
+            $company->load(['products']);
             return new CompanyResource($company);
         }
 
         return new ClientCompanyResource($company);
 
         return response($company);
+    }
+
+    public function dashboardData(Request $request)
+    {
+        // TODO - VERIFICAR SE O COMPANY QUE VIRÁ NA FUNÇÃO É A MESMA QUE O USUÁRIO TEM ACESSO
+        $user_companies_ids = $request->user()->companies->pluck('id')->toArray();
+        $company = $request->user()->companies[0];
+
+        if (
+            $request->user()->type !== 'company' ||
+            // !in_array($company->id, $user_companies_ids)
+            $user_companies_ids < 1 ||
+            !$company
+        ) {
+            return response([
+                'error' => 'Apenas empresas podem ter acessos aos seus respectivos dados'
+            ], 403);
+        }
+
+        // TODO - ATUALIZAR DADOS
+        return response([
+            'totalProducts' => count($company->products),
+            'activeWebhooks' => 0,
+            'monthlyUpdates' => 0,
+            'userEngagement' => 0
+        ]);
+    }
+
+    // TODO
+    public function submit(Request $request)
+    {
+        Log::alert($request->all());
+        return response([
+            'message' => 'Solicitação feita com sucesso!'
+        ]);
     }
 
     /**
