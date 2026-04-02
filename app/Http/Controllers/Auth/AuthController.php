@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ClientUserResource;
+use App\Http\Resources\CompanyUserResource;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Events\Verified;
@@ -76,6 +77,12 @@ class AuthController extends Controller
                 $query->where('checked', 0);
             }
         ])->find($request->user()->id);
+
+        if ($user->type === 'company') {
+            return response([
+                'user' => new CompanyUserResource($user)
+            ]);
+        }
 
         return response([
             'user' => new ClientUserResource($user)
