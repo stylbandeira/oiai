@@ -35,18 +35,19 @@ class AveragePriceJob implements ShouldQueue
      */
     public function handle()
     {
-        $today = Carbon::now()->subDays(Product::AVERAGE_PRICE_JOB_CONSTANCY_DAYS);
+        $job_constancy = Carbon::now()->subDays(Product::AVERAGE_PRICE_JOB_CONSTANCY_DAYS);
+        $average_date_limit = Carbon::now()->subWeeks(Product::AVERAGE_PRICE_PURCHASE_DATE_LIMIT_WEEKS);
         $data = [];
 
-        $products = Product::whereHas('userAddedProducts', function ($query) use ($today) {
-            $query->where('created_at', '>', $today)
+        $products = Product::whereHas('userAddedProducts', function ($query) use ($job_constancy, $average_date_limit) {
+            $query->where('created_at', '>', $job_constancy)
+                ->where('purchase_date', '>', $average_date_limit)
                 ->where('processed', false);
         })
             ->with('userAddedProducts', function ($query) {
                 $query->withCount('product');
             })
             ->get();
-
         //Média do produto geral
         foreach ($products as $product) {
 
@@ -95,13 +96,13 @@ class AveragePriceJob implements ShouldQueue
             }
         }
 
-        UserAddedProducts::where('created_at', '>', $today)
+        UserAddedProducts::where('created_at', '>', $job_constancy)
             ->where('processed', false)
             ->update([
                 'processed' => true
             ]);
 
-        Log::alert($data);
+        Log::info('Average Price Job Proceeded With Sucess!');
     }
 
     public function setAveragePrice(array $added_products)
