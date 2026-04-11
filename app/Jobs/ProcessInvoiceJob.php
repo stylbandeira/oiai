@@ -118,15 +118,14 @@ class ProcessInvoiceJob implements ShouldQueue
                 ],
             );
 
-            if ($insertedProduct->wasChanged  || $insertedProduct->wasRecentlyCreated) {
+            if (true) {
 
-                if ($insertedProduct->wasChanged) {
+                if (!$insertedProduct->wasRecentlyCreated) {
                     $insertedProduct->mentioned_quantity++;
                     $insertedProduct->save();
                 }
 
                 try {
-
                     $company_product = CompanyProducts::firstOrCreate(
                         [
                             'product_id' => $insertedProduct->id,
@@ -137,13 +136,24 @@ class ProcessInvoiceJob implements ShouldQueue
                         ]
                     );
 
+                    try {
+                        $dataBruta = $invoice_data->dados_nota->data_emissao; // "24/03/2026 20:14:32-03:00"
+
+                        $purchase_date = Carbon::createFromFormat('d/m/Y H:i:sP', $dataBruta);
+
+                        Log::alert('SUCESSO: ' . $purchase_date);
+                    } catch (\Exception $e) {
+                        Log::alert('ERRO: ' . $e->getMessage());
+                    }
+
                     $user_inserted_products[] = [
                         'user_id' => $user->id,
                         'price' => $productData->valor_unitario ?? 0,
                         'company_id' => $company->id,
                         'product_id' => $insertedProduct->id,
                         'created_at' => Carbon::now(),
-                        'company_product_id' => $company_product->id
+                        'company_product_id' => $company_product->id,
+                        'purchase_date' => $purchase_date
                     ];
                 } catch (\Throwable $th) {
                     $this->not_inserted_products[] = [

@@ -18,7 +18,8 @@ class UserAddedProducts extends Model
         'company_id',
         'product_id',
         'price',
-        'processed'
+        'processed',
+        'purchase_date'
     ];
 
     public function product()
