@@ -30,6 +30,12 @@ class Product extends Model
         'description' => '',
     ];
 
+    public function companies()
+    {
+        return $this->belongsToMany(Company::class, 'company_products')
+            ->withPivot(['average_price']);
+    }
+
     public function userAddedProducts()
     {
         return $this->hasMany(UserAddedProducts::class, 'product_id');

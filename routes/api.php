@@ -68,6 +68,8 @@ Route::post('/email/resend', [AuthController::class, 'resendVerificationEmail'])
 Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
 
+    // LIST
+    Route::post('/lists/{list}/optimize', [ListController::class, 'optimize']);
     Route::apiResource('/lists', ListController::class);
     Route::apiResource('/listItems', ListItensController::class);
 

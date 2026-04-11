@@ -21,6 +21,11 @@ class CompanyProducts extends Model
         return $this->belongsTo(Company::class, 'company_id');
     }
 
+    public function product()
+    {
+        return $this->belongsTo(Product::class, 'product_id');
+    }
+
     public function userAddedProducts()
     {
         return $this->hasMany(UserAddedProducts::class, 'company_product_id');

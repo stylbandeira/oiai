@@ -3,12 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\ClientListResource;
+use App\Http\Resources\ClientProductResource;
+use App\Http\Resources\ListProductResource;
+use App\Models\CompanyProducts;
 use App\Models\ItensList;
+use App\Models\ListProducts;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+
+use function PHPUnit\Framework\at;
 
 class ListController extends Controller
 {
@@ -93,7 +99,7 @@ class ListController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show(Request $request, int $id)
     {
         $list = ItensList::with([
             'listProducts.product.unity',
@@ -108,9 +114,77 @@ class ListController extends Controller
             ], 404);
         }
 
+        $l = [
+            'id' => $list->id,
+            'optimized' => $list->optimized,
+            'user_id' => $list->user_id,
+            'name' => $list->name,
+            'favorite' => boolval($list->favorite),
+            'status' => $list->status,
+            'total' => floatval($list->total),
+            'created_at' => $list->created_at,
+            'companies' => [],
+            'products' => ListProductResource::collection($list->listProducts),
+            'productsQuantity' => $list->products()->count(),
+        ];
+
+        if ($list->optimized) {
+            $products_list = $list->listProducts;
+
+            foreach ($products_list as $product) {
+                if (!isset($l['companies'][$product->companyProduct->company->id])) {
+                    $l['companies'][$product->companyProduct->company->id] = (object) [
+                        'company' => $product->companyProduct->company,
+                        'products' => [] // Inicializa array vazio de produtos
+                    ];
+                }
+
+                $l['companies'][$product->companyProduct->company->id]->products[] = (object) [
+                    'product' => new ClientProductResource($product->product),
+                    'average_price' => $product->companyProduct->average_price,
+                ];
+            }
+        }
+
         return response([
-            'list' => new ClientListResource($list),
+            'list' => $l,
             'optimized' => $list->optimized
+        ]);
+    }
+
+    public function optimize(ItensList $list)
+    {
+        $r = [];
+
+        $produtos = CompanyProducts::whereIn('product_id', $list->products->pluck('id'))
+            ->with(['product', 'company'])
+            ->get();
+
+
+        $cheapest = $produtos->groupBy('product_id')
+            ->map(function ($items) {
+                $minPrice = $items->min('average_price');
+                return $items->filter(function ($item) use ($minPrice) {
+                    return $item->average_price == $minPrice;
+                })->values();
+            })
+            ->flatten(1);
+
+        foreach ($cheapest as $cheap) {
+            $r[$cheap->company->name][] = new ClientProductResource($cheap->product);
+
+            ListProducts::where('list_id', $list->id)
+                ->where('product_id', $cheap->product_id)
+                ->update([
+                    'company_product_id' => $cheap->id
+                ]);
+        }
+
+        $list->optimized = true;
+        $list->save();
+
+        return response([
+            'list' => $r
         ]);
     }
 
@@ -149,10 +223,6 @@ class ListController extends Controller
             ]);
         }
 
-        if ($list->optimized) {
-            $this->optimizeList($list);
-        }
-
         return response([
             'list' => $list
         ]);
@@ -173,15 +243,5 @@ class ListController extends Controller
         return response([
             'message' => 'Lista deletada com sucesso!'
         ]);
-    }
-
-    private function optimizeList(ItensList $list)
-    {
-        // $list->optimized = true;
-        //empresas mais próximas (distância a definir TODO)
-        //pega os produtos
-        //verifica onde é mais barato
-        //atribui esse
-        $list->save();
     }
 }
