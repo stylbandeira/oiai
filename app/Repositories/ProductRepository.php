@@ -57,7 +57,9 @@ class ProductRepository
                 }]);
         }
 
-        return $query->orderBy('mentioned_quantity', 'desc')
+        return $query->withCount('companies as sum_companies')
+            ->orderBy('sum_companies', 'desc')
+            ->orderBy('mentioned_quantity', 'desc')
             ->orderBy('listAdded', 'desc')
             ->orderBy('name', 'asc')
             ->limit(1500);
