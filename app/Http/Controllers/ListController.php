@@ -14,8 +14,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
-use function PHPUnit\Framework\at;
-
 class ListController extends Controller
 {
     /**
@@ -209,18 +207,17 @@ class ListController extends Controller
     public function update(Request $request, $id)
     {
         $list = ItensList::with('listProducts')->find($id);
-
-        $list->update([
-            'name' => $request->name
-        ]);
+        $list->update($request->all());
 
         $list->listProducts()->where('completed', 0)->delete();
 
-        foreach ($request->items as $item) {
-            $list->listProducts()->create([
-                'product_id' => $item['product_id'],
-                'quantity' => $item['quantity'],
-            ]);
+        if ($request->items) {
+            foreach ($request->items as $item) {
+                $list->listProducts()->create([
+                    'product_id' => $item['product_id'],
+                    'quantity' => $item['quantity'],
+                ]);
+            }
         }
 
         return response([
