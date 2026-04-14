@@ -16,7 +16,8 @@ class ItensList extends Model
         'name',
         'favorite',
         'total',
-        'optimized'
+        'optimized',
+        'status'
     ];
 
     public function products()
