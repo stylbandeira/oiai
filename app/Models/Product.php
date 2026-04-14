@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -66,5 +67,17 @@ class Product extends Model
         } else {
             return 'destructive';
         }
+    }
+
+    /**
+     * Define getter and setter for average_price attribute
+     *
+     * @return Attribute
+     */
+    public function averagePrice(): Attribute
+    {
+        return Attribute::make(
+            get: fn(float $value) => number_format($value, 2)
+        );
     }
 }
