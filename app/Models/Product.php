@@ -30,6 +30,7 @@ class Product extends Model
         'category_id' => 1,
         'listAdded' => 0,
         'description' => '',
+        'average_price' => NULL
     ];
 
     public function companies()
