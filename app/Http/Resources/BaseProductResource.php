@@ -28,6 +28,7 @@ class BaseProductResource extends JsonResource
             'unity_id' => $this->whenLoaded('unity', $this->unity->id),
             'unity_quantity' => $this->whenLoaded('unity', $this->quantity),
             'category' => $this->whenLoaded('category', $this->category->name),
+            'companies_count' => $this->whenLoaded('companies', count($this->companies)),
         ];
     }
 
