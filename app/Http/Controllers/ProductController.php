@@ -39,7 +39,7 @@ class ProductController extends Controller
 
         $perPage = $request->per_page ?? 15;
         $products = $this->productRepo
-            ->list($request->user(), $request, ['category', 'unity'])
+            ->list($request->user(), $request, ['category', 'unity', 'companies'])
             ->paginate($perPage);
 
         if ($request->user()->type === 'admin') {
