@@ -49,4 +49,9 @@ class Company extends Model
 
         return Storage::url($this->img);
     }
+
+    public function address()
+    {
+        return $this->hasOne(Address::class);
+    }
 }
