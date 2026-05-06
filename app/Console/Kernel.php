@@ -3,6 +3,7 @@
 namespace App\Console;
 
 use App\Jobs\AveragePriceJob;
+use App\Jobs\GeocodeScheduleJob;
 use App\Jobs\ProcessInvoiceJob;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
@@ -20,7 +21,7 @@ class Kernel extends ConsoleKernel
     {
         // Versão 1: Com log detalhado
         $schedule->job(new ProcessInvoiceJob())
-            ->everyTenMinutes()
+            ->everyMinute()
             ->before(function () {
                 Log::info('Antes de despachar ProcessInvoiceJob', [
                     'memory' => memory_get_usage(),
@@ -47,6 +48,12 @@ class Kernel extends ConsoleKernel
         $schedule->call(function () {
             Log::info('Scheduler heartbeat: ' . now());
         })->everyMinute();
+
+        $schedule->job(new GeocodeScheduleJob())
+            ->everyMinute()
+            ->onFailure(function () {
+                Log::alert("Erro no Job de Geolocalização");
+            });
     }
 
     /**
