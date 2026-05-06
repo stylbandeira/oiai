@@ -28,4 +28,13 @@ class Address extends Model
     protected $attributes = [
         'country' => 'Brasil'
     ];
+
+    public function getFullAddressAttribute()
+    {
+        return $this->street .
+            ',' . $this->number .
+            ', ' . $this->area .
+            ', ' . $this->city  .
+            ', ' . $this->state;
+    }
 }
