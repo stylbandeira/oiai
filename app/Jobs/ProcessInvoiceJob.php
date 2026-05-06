@@ -93,6 +93,9 @@ class ProcessInvoiceJob implements ShouldQueue
                 'city' => $company_data->municipio,
                 'street' => $company_data->endereco,
                 'number' => ($company_data->numero ?? ''),
+            ], [
+                'state' => $company_data->uf,
+                'cep' => $company_data->cep ?? null,
             ]);
 
             $company->address_id = $address->id;
