@@ -75,18 +75,37 @@ class InvoiceController extends Controller
         $qrData = $request->input('qr_code_data');
 
         if ($request->invoice_code) {
-            $response = Http::post('https://dfe-portal.svrs.rs.gov.br/Dfe/ConsultaPublicaDfe', [
-                'sistema' => 'Dfe',
-                'EhConsultaPublicaSiteSefaz' => True,
-                'Ambiente' => 1,
-                'ChaveAcessoDfe' => $request->invoice_code
-            ]);
+
+            $client = Http::timeout(120)
+                ->connectTimeout(20)
+                ->withHeaders([
+                    'User-Agent' => 'Mozilla/5.0',
+                    'Accept' => 'text/html,application/xhtml+xml,application/xml',
+                ]);
+
+            $client->get('https://dfe-portal.svrs.rs.gov.br/Dfe/ConsultaPublicaDfe');
+
+            $response = $client
+                ->asForm()
+                ->withHeaders([
+                    'Referer' => 'https://dfe-portal.svrs.rs.gov.br/Dfe/ConsultaPublicaDfe',
+                ])
+                ->post('https://dfe-portal.svrs.rs.gov.br/Dfe/ConsultaPublicaDfe', [
+                    'sistema' => 'Dfe',
+                    'EhConsultaPublicaSiteSefaz' => 'True',
+                    'Ambiente' => '1',
+                    'ChaveAcessoDfe' => $request->invoice_code,
+                ]);
 
             if ($response->successful()) {
                 $scraper = new NFCeHtmlParserService();
                 $result = $scraper->parse($response);
                 $invoice_data = $result;
                 $receipt_data = explode('-', $result['dados_nota']['data_emissao'])[0];;
+
+                if ($result['dados_nota']['modelo'] == '') {
+                    $result = $this->scraper->scrapeFromQRCode($request->invoice_code);
+                }
             } else {
                 $error = $response->body();
                 return response([
