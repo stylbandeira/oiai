@@ -19,7 +19,13 @@ return [
 
     'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 
-    'allowed_origins' => [env('FRONTEND_URL', 'http://localhost:3000')], // Específico para seu frontend
+    'allowed_origins' => [
+        env('FRONTEND_URL', 'http://localhost:3000'),
+        'https://worrisome-green-moneywise.ngrok-free.dev/',  // Adicione seu link ngrok
+        'https://*.ngrok-free.dev',  // Ou use coringa para qualquer ngrok
+        'https://*.serveo.net',  // Permite qualquer subdomínio do Serveo
+        'https://*.serveousercontent.com',
+    ], // Específico para seu frontend
 
     'allowed_origins_patterns' => [],
 
