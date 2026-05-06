@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\ClientListResource;
 use App\Http\Resources\ClientProductResource;
+use App\Http\Resources\CompanyResource;
 use App\Http\Resources\ListProductResource;
 use App\Models\CompanyProducts;
 use App\Models\ItensList;
@@ -132,7 +133,7 @@ class ListController extends Controller
             foreach ($products_list as $product) {
                 if (!isset($l['companies'][$product->companyProduct->company->id])) {
                     $l['companies'][$product->companyProduct->company->id] = (object) [
-                        'company' => $product->companyProduct->company,
+                        'company' => new CompanyResource($product->companyProduct->company),
                         'products' => [] // Inicializa array vazio de produtos
                     ];
                 }
@@ -184,17 +185,6 @@ class ListController extends Controller
         return response([
             'list' => $r
         ]);
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        //
     }
 
     /**

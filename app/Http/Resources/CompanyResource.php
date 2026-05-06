@@ -25,6 +25,8 @@ class CompanyResource extends JsonResource
             'phone' => $this->phone,
             'description' => $this->description,
             'raw_address' => $this->raw_address,
+            'geocode_status' => $this->geocode_status,
+            'address' => $this->whenLoaded('address', new AddressResource($this->address))
         ];
     }
 }
