@@ -42,12 +42,6 @@ class CompanyController extends Controller
             $query->where('status', $request->status);
         }
 
-        if ($request->user()->type === 'company') {
-            $query->whereHas('owners', function ($q) use ($request) {
-                $q->where('user_id', $request->user()->id);
-            });
-        }
-
         $perPage = $request->per_page ?? 10;
 
         if ($request->user()->type === 'admin') {
@@ -148,15 +142,13 @@ class CompanyController extends Controller
         }
 
         return new ClientCompanyResource($company);
-
-        return response($company);
     }
 
     public function dashboardData(Request $request)
     {
         // TODO - VERIFICAR SE O COMPANY QUE VIRÁ NA FUNÇÃO É A MESMA QUE O USUÁRIO TEM ACESSO
         $user_companies_ids = $request->user()->companies->pluck('id')->toArray();
-        $company = $request->user()->companies[0];
+        $company = $request->user()->activeCompanies[0] ?? false;
 
         if (
             $request->user()->type !== 'company' ||
@@ -171,7 +163,7 @@ class CompanyController extends Controller
 
         // TODO - ATUALIZAR DADOS
         return response([
-            'totalProducts' => count($company->products),
+            'totalProducts' => count($company->products) ?? 0,
             'activeWebhooks' => 0,
             'monthlyUpdates' => 0,
             'userEngagement' => 0
