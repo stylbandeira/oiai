@@ -18,14 +18,12 @@ class CompanyUserResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'type' => $this->type,
-            // 'img' => $this->img ? config('app.url') . '/storage/' . $this->img : null,
             'email' => $this->email,
             'points' => $this->points,
             'reputation' => $this->reputation,
             'cpf' => $this->cpf,
             'status' => $this->status,
-
-            'companies' => $this->whenLoaded('companies', $this->companies)
+            'activeCompanies' => $this->whenLoaded('activeCompanies', $this->activeCompanies)
         ];
     }
 }

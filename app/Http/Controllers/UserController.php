@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\AdminUserResource;
 use App\Http\Resources\ClientDashboardResource;
 use App\Http\Resources\ClientUserResource;
+use App\Http\Resources\CompanyUserResource;
 use App\Models\User;
 use App\Services\ExportService;
 use Illuminate\Http\Request;
@@ -152,11 +153,14 @@ class UserController extends Controller
     public function show(User $user)
     {
         $current_user = Auth::user();
+        $user->load('companies');
 
         if ($current_user->type === 'admin') {
             return new AdminUserResource($user);
-        } else if ($current_user->type === 'client') {
+        } else if ($current_user->type === 'client' && $user->id === $current_user->id) {
             return new ClientUserResource($user);
+        } else if ($current_user->type === 'company') {
+            return new CompanyUserResource($user);
         }
     }
 
