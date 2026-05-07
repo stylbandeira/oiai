@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 
 class ProductRepository
 {
-    protected $product;
+    protected Product $product;
 
     public function __construct(Product $product)
     {
