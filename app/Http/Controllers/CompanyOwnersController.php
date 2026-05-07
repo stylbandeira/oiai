@@ -2,14 +2,66 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\AdminCompanyResource;
+use App\Http\Resources\CompanyResource;
 use App\Models\Company;
 use App\Models\CompanyOwners;
+use App\Repositories\CompanyRepository;
+use App\Repositories\EventRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class CompanyOwnersController extends Controller
 {
+    protected EventRepository $eventRepo;
+    protected CompanyRepository $companyRepo;
+
+    public function __construct(EventRepository $eventRepo, CompanyRepository $companyRepo)
+    {
+        $this->eventRepo = $eventRepo;
+        $this->companyRepo = $companyRepo;
+    }
+
+    /**
+     * Lista empresas dos usuários.
+     *
+     * @param Request $request
+     * @return void
+     */
+    public function index(Request $request)
+    {
+        $user = $request->user();
+
+        if ($request->user()->type === 'client') {
+            return response([
+                'error' => 'Não permitido para clientes comuns.'
+            ], 403);
+        }
+
+        $query = $this->companyRepo->list($request);
+
+        $perPage = $request->per_page ?? 10;
+
+        $companies = $query->with(['owners', 'products'])
+            ->whereHas('owners', function ($query) use ($request) {
+                $query->where('user_id', $request->user()->id);
+            })
+            ->with(['ownerRelationship' => function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+            }])
+            ->withCount('products')
+            ->paginate($perPage);
+
+        if ($request->user()->type === 'admin') {
+            return AdminCompanyResource::collection($companies);
+        }
+
+        if ($request->user()->type === 'company') {
+            return CompanyResource::collection($companies);
+        }
+    }
+
     /**
      * Request access to company data
      *
@@ -36,7 +88,7 @@ class CompanyOwnersController extends Controller
             ], 400);
         }
 
-
+        $this->eventRepo->createOwnershipRequestEvent($request->user(), $company);
 
         return response([
             'message' => 'Solicitação feita com sucesso!'
@@ -83,6 +135,8 @@ class CompanyOwnersController extends Controller
             'company_id' => $company->id,
             'status' => 'pending',
         ]);
+
+        $this->eventRepo->createOwnershipRequestEvent($request->user(), $company);
 
         return response([
             'message' => 'Empresa cadastrada e solicitação enviada.'
