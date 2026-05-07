@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Event extends Model
 {
     const TYPE_PRODUCT_INSERT = 'product_insert';
+    const TYPE_COMPANY_OWNER_REQUEST = 'company_ownership_request';
 
     use HasFactory;
     protected $table = 'event';
