@@ -103,6 +103,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     //COMPANY OWNERS
     Route::post('companies/{company}/request-access', [CompanyOwnersController::class, 'requestAccess']);
     Route::post('companies/request-with-new-company', [CompanyOwnersController::class, 'storeCompanyAndRequest']);
+    Route::get('user/company-requests', [CompanyOwnersController::class, 'index']);
 
     Route::get('/dashboard-data', [UserController::class, 'dashboardData']);
 
