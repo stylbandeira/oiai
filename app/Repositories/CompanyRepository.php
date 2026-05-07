@@ -3,29 +3,31 @@
 namespace App\Repositories;
 
 use App\Models\Company;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class CompanyRepository
 {
-    protected $model;
+    protected Company $company;
 
-    public function __construct(Company $model)
+    public function __construct(Company $company)
     {
-        $this->model = $model;
+        $this->company = $company;
     }
 
     public function all()
     {
-        return $this->model->all();
+        return $this->company->all();
     }
 
     public function find($id)
     {
-        return $this->model->findOrFail($id);
+        return $this->company->findOrFail($id);
     }
 
     public function create(array $data)
     {
-        return $this->model->create($data);
+        return $this->company->create($data);
     }
 
     public function update($id, array $data)
@@ -37,6 +39,34 @@ class CompanyRepository
 
     public function delete($id)
     {
-        return $this->model->destroy($id);
+        return $this->company->destroy($id);
+    }
+
+    public function list(Request $request)
+    {
+        $query = Company::query();
+
+        if ($request->has('search')) {
+            $searchTerm = '%' . $request->search . '%';
+            $query->where(function ($query) use ($searchTerm) {
+                $query->where('name', 'like', $searchTerm)
+                    ->orWhere('email', 'like', $searchTerm)
+                    ->orWhere('cnpj', 'like', $searchTerm);
+            });
+        }
+
+        if ($request->has('status') && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->user()->type === 'admin') {
+
+            //TO-DO - QUERO DEIXAR ISSO MAIS AUTOMÁTICO
+            if ($request->has('status')) {
+                $query->where('status', $request->status);
+            }
+        }
+
+        return $query;
     }
 }

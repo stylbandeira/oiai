@@ -6,6 +6,7 @@ use App\Http\Resources\AdminCompanyResource;
 use App\Http\Resources\ClientCompanyResource;
 use App\Http\Resources\CompanyResource;
 use App\Models\Company;
+use App\Repositories\CompanyRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -15,8 +16,11 @@ use Inertia\Inertia;
 
 class CompanyController extends Controller
 {
-    public function __construct()
+    protected CompanyRepository $companyRepo;
+
+    public function __construct(CompanyRepository $companyRepo)
     {
+        $this->companyRepo = $companyRepo;
         $this->authorizeResource(Company::class, 'company');
     }
 
@@ -27,34 +31,9 @@ class CompanyController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Company::query();
-
-        if ($request->has('search') && !empty($request->search)) {
-            $searchTerm = '%' . $request->search . '%';
-            $query->where(function ($q) use ($searchTerm) {
-                $q->where('name', 'like', $searchTerm)
-                    ->orWhere('email', 'like', $searchTerm)
-                    ->orWhere('cnpj', 'like', $searchTerm);
-            });
-        }
-
-        if ($request->has('status') && $request->status !== 'all') {
-            $query->where('status', $request->status);
-        }
+        $query = $this->companyRepo->list($request);
 
         $perPage = $request->per_page ?? 10;
-
-        if ($request->user()->type === 'admin') {
-
-            //TO-DO - QUERO DEIXAR ISSO MAIS AUTOMÁTICO
-            if ($request->has('status')) {
-                $query->where('status', $request->status);
-            }
-
-            if ($request->has('plan')) {
-                $query->where('plan', $request->plan);
-            }
-        }
 
         $companies = $query->with(['owners', 'products'])
             ->withCount('products')
