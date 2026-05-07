@@ -41,6 +41,11 @@ class Company extends Model
         return $this->belongsToMany(User::class, 'company_owners', 'company_id', 'user_id');
     }
 
+    public function ownerRelationship()
+    {
+        return $this->hasOne(CompanyOwners::class, 'company_id', 'id');
+    }
+
     public function getImgUrlAttribute()
     {
         if (!$this->img) {
