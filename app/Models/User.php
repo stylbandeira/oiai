@@ -78,6 +78,12 @@ class User extends Authenticatable
         return $this->belongsToMany(Company::class, 'company_owners', 'user_id', 'company_id');
     }
 
+    public function activeCompanies()
+    {
+        return $this->belongsToMany(Company::class, 'company_owners', 'user_id', 'company_id')
+            ->wherePivot('status', 'active');
+    }
+
     public function favoriteProducts()
     {
         return $this->belongsToMany(Product::class, 'favorite_products', 'user_id', 'product_id');
