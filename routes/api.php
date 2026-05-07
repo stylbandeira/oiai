@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\CompanyOwnersController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\FavoriteProductsController;
 use App\Http\Controllers\InvoiceController;
@@ -12,7 +13,6 @@ use App\Http\Controllers\ProductCategoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\UnityController;
 use App\Http\Controllers\UserController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -99,6 +99,10 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::get('/companies/dashboard-data', [CompanyController::class, 'dashboardData']);
     Route::post('/companies/submit', [CompanyController::class, 'submit']);
     Route::apiResource('/companies', CompanyController::class);
+
+    //COMPANY OWNERS
+    Route::post('companies/{company}/request-access', [CompanyOwnersController::class, 'requestAccess']);
+    Route::post('companies/request-with-new-company', [CompanyOwnersController::class, 'storeCompanyAndRequest']);
 
     Route::get('/dashboard-data', [UserController::class, 'dashboardData']);
 
