@@ -20,7 +20,8 @@ class User extends Authenticatable
 
     const POINTS = 'points';
     const ALLOWED_ACTIVITY_TYPE = [
-        Event::TYPE_PRODUCT_INSERT
+        Event::TYPE_PRODUCT_INSERT,
+        Event::TYPE_COMPANY_OWNER_REQUEST
     ];
 
     /**
@@ -83,6 +84,7 @@ class User extends Authenticatable
         return $this->belongsToMany(Company::class, 'company_owners', 'user_id', 'company_id')
             ->wherePivot('status', 'active');
     }
+
 
     public function favoriteProducts()
     {
