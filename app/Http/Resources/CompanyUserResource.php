@@ -23,7 +23,10 @@ class CompanyUserResource extends JsonResource
             'reputation' => $this->reputation,
             'cpf' => $this->cpf,
             'status' => $this->status,
-            'activeCompanies' => $this->whenLoaded('activeCompanies', $this->activeCompanies)
+            'activeCompanies' => $this->whenLoaded('activeCompanies', $this->activeCompanies),
+            'pendingCompanies' => $this->whenLoaded('pendingCompanies', function () {
+                return CompanyResource::collection($this->pendingCompanies);
+            })
         ];
     }
 }
