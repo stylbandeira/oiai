@@ -85,6 +85,12 @@ class User extends Authenticatable
             ->wherePivot('status', 'active');
     }
 
+    public function pendingCompanies()
+    {
+        return $this->belongsToMany(Company::class, 'company_owners', 'user_id', 'company_id')
+            ->wherePivot('status', 'pending');
+    }
+
 
     public function favoriteProducts()
     {
