@@ -79,6 +79,8 @@ class AuthController extends Controller
         ])->find($request->user()->id);
 
         if ($user->type === 'company') {
+            $user->load(['companies', 'activeCompanies', 'pendingCompanies']);
+
             return response([
                 'user' => new CompanyUserResource($user)
             ]);
