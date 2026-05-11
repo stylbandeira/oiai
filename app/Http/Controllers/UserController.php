@@ -153,7 +153,7 @@ class UserController extends Controller
     public function show(User $user)
     {
         $current_user = Auth::user();
-        $user->load('companies');
+        $user->load(['companies', 'pendingCompanies', 'activeCompanies']);
 
         if ($current_user->type === 'admin') {
             return new AdminUserResource($user);
@@ -165,17 +165,6 @@ class UserController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        //
-    }
-
-    /**
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -184,8 +173,6 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
-        Log::alert($request->all());
-
         $validator = Validator::make($request->all(), [
             'name' => 'string',
             'type' => 'string',
