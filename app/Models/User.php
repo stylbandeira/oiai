@@ -126,9 +126,4 @@ class User extends Authenticatable
     {
         return $this->hasMany(Event::class);
     }
-
-    public function getNotificationsAttribute()
-    {
-        return $this->hasNotification ? 0 : $this->events()->where('checked', false)->count();
-    }
 }
