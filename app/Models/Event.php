@@ -21,7 +21,10 @@ class Event extends Model
         'type',
         'points',
         'link',
-        'checked'
+        'checked',
+        'target_type',
+        'entity_type',
+        'entity_id'
     ];
 
     public function user()
