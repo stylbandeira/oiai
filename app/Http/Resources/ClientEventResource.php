@@ -6,7 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Log;
 
-class ClientEventResource extends JsonResource
+class ClientEventResource extends BaseEventResource
 {
     /**
      * Transform the resource into an array.
@@ -16,16 +16,6 @@ class ClientEventResource extends JsonResource
      */
     public function toArray($request)
     {
-        return [
-            'id' => $this->id,
-            'title' => $this->title,
-            'description' => $this->description,
-            'where' => $this->where,
-            'type' => $this->type,
-            'points' => $this->points,
-            'link' => $this->link,
-            'is_new' => Carbon::now()->subDays(3) < $this->created_at,
-            'created_at' => $this->created_at,
-        ];
+        return parent::toArray($request);
     }
 }
