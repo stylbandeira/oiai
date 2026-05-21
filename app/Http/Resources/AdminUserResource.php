@@ -2,10 +2,7 @@
 
 namespace App\Http\Resources;
 
-use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Log;
-
-class AdminUserResource extends JsonResource
+class AdminUserResource extends BaseUserResource
 {
     /**
      * Transform the resource into an array.
@@ -15,23 +12,25 @@ class AdminUserResource extends JsonResource
      */
     public function toArray($request)
     {
+        return parent::toArray($request);
+    }
+
+    /**
+     * Method to be overwritten by child
+     */
+    protected function getUserSpecificFields(): array
+    {
         return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'type' => $this->type,
             // 'img' => $this->img ? config('app.url') . '/storage/' . $this->img : null,
-            'email' => $this->email,
-            'points' => $this->points,
-            'reputation' => $this->reputation,
-            'cpf' => $this->cpf,
-            'status' => $this->status,
             'companies' => $this->whenLoaded('companies', $this->companies),
+            'notificationList' => $this->notificationList,
 
             //Only for Admin
             'email_verified_at' => $this->email_verified_at,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'deleted_at' => $this->deleted_at,
+
         ];
     }
 }
