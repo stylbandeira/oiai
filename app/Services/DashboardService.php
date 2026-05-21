@@ -53,8 +53,6 @@ class DashboardService
             }
         }
 
-        Log::alert($products);
-
         return [];
     }
 
