@@ -76,13 +76,16 @@ class EventRepository
         $event = [];
 
         $event = [
-            'user_id' => $user->id,
+            'user_id' => null,
             'title' => Event::TYPE_COMPANY_OWNER_REQUEST,
             'description' => ucwords(strtolower($user->name)) . ' solicitou acesso de admin à empresa: ' . $company->name,
             'where' => $company->name ?? '',
             'type' => 'admin',
+            'entity_type' => 'user',
+            'entity_id' => $user->id,
             'points' => 0,
-            'link' => $this->generateLink()
+            'link' => $this->generateLink(),
+            'target_type' => 'admin',
         ];
 
         try {
