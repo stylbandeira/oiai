@@ -48,8 +48,6 @@ class ProcessInvoiceJob implements ShouldQueue
             ->where('pending', 1)
             ->get();
 
-        Log::alert(['Quantos?' => count($invoices)]);
-
         foreach ($invoices as $invoice) {
             $this->processInvoice($invoice);
         }
