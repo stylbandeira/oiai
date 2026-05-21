@@ -2,10 +2,7 @@
 
 namespace App\Http\Resources;
 
-use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Log;
-
-class ClientUserResource extends JsonResource
+class ClientUserResource extends BaseUserResource
 {
     /**
      * Transform the resource into an array.
@@ -15,17 +12,17 @@ class ClientUserResource extends JsonResource
      */
     public function toArray($request)
     {
+        return parent::toArray($request);
+    }
+
+    /**
+     * Method to be overwritten by child
+     */
+    protected function getUserSpecificFields(): array
+    {
         return [
-            'email' => $this->email,
-            'notifications' => $this->notifications,
-            'notificationList' => $this->whenLoaded('events', function () {
-                return ClientEventResource::collection($this->events);
-            }),
-            'name' => $this->name,
             'points' => $this->points,
-            'token' => $this->token,
-            'type' => $this->type,
-            'email_verified' => $this->hasVerifiedEmail()
+            'reputation' => $this->reputation,
         ];
     }
 }
