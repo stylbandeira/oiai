@@ -147,13 +147,13 @@ class UserController extends Controller
     /**
      * Display the specified resource.
      *
-     * @param  int  $id
+     * @param  User  $user
      * @return \Illuminate\Http\Response
      */
     public function show(User $user)
     {
         $current_user = Auth::user();
-        $user->load(['companies', 'pendingCompanies', 'activeCompanies']);
+        $user->load(['companies', 'pendingCompanies', 'activeCompanies', 'events']);
 
         if ($current_user->type === 'admin') {
             return new AdminUserResource($user);
@@ -168,7 +168,7 @@ class UserController extends Controller
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
+     * @param  User  $user
      * @return \Illuminate\Http\Response
      */
     public function update(Request $request, User $user)
