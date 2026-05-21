@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\AdminUserResource;
 use App\Http\Resources\ClientUserResource;
 use App\Http\Resources\CompanyUserResource;
+use App\Models\Event;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Events\Verified;
@@ -72,17 +74,35 @@ class AuthController extends Controller
 
     public function user(Request $request)
     {
-        $user = User::with([
-            'events' => function ($query) {
-                $query->where('checked', 0);
-            }
-        ])->find($request->user()->id);
+        $user = $request->user();
+
+        $events = Event::query()
+            ->where(function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+
+                if ($user->type === 'admin') {
+                    $query->orWhere('target_type', 'admin');
+                }
+
+                $query->orWhere('target_type', 'all');
+            })
+            ->latest()
+            ->get();
+
+        $user->notificationList = $events;
+        $user->notifications = $events->where('checked', false)->count();
 
         if ($user->type === 'company') {
             $user->load(['companies', 'activeCompanies', 'pendingCompanies']);
 
             return response([
                 'user' => new CompanyUserResource($user)
+            ]);
+        }
+
+        if ($user->type === 'admin') {
+            return response([
+                'user' => new AdminUserResource($user)
             ]);
         }
 
