@@ -123,25 +123,35 @@ class CompanyController extends Controller
         return new ClientCompanyResource($company);
     }
 
-    public function dashboardData(Request $request)
+    public function dashboardData(Request $request, Company $company)
     {
-        // TODO - VERIFICAR SE O COMPANY QUE VIRÁ NA FUNÇÃO É A MESMA QUE O USUÁRIO TEM ACESSO
-        $user_companies_ids = $request->user()->companies->pluck('id')->toArray();
-        $company = $request->user()->activeCompanies[0] ?? false;
+        $user = Auth::user();
 
-        if (
-            $request->user()->type !== 'company' ||
-            // !in_array($company->id, $user_companies_ids)
-            $user_companies_ids < 1 ||
-            !$company
-        ) {
+        if (!in_array($company->id, $user->activeCompanies->pluck('id')->toArray())) {
             return response([
-                'error' => 'Apenas empresas podem ter acessos aos seus respectivos dados'
+                'error' => "User don't have access to this company"
             ], 403);
         }
 
+
+        // // TODO - VERIFICAR SE O COMPANY QUE VIRÁ NA FUNÇÃO É A MESMA QUE O USUÁRIO TEM ACESSO
+        // $user_companies_ids = $request->user()->companies->pluck('id')->toArray();
+        // $company = $request->user()->activeCompanies[0] ?? false;
+
+        // if (
+        //     $request->user()->type !== 'company' ||
+        //     // !in_array($company->id, $user_companies_ids)
+        //     $user_companies_ids < 1 ||
+        //     !$company
+        // ) {
+        //     return response([
+        //         'error' => 'Apenas empresas podem ter acessos aos seus respectivos dados'
+        //     ], 403);
+        // }
+
         // TODO - ATUALIZAR DADOS
         return response([
+            'company' => new CompanyResource($company),
             'totalProducts' => count($company->products) ?? 0,
             'activeWebhooks' => 0,
             'monthlyUpdates' => 0,
