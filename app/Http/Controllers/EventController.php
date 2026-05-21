@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Livewire\Forms\LoginForm;
 use App\Models\Event;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -12,12 +13,21 @@ class EventController extends Controller
     {
         $event->update($request->all());
 
-        return response(['message' => 'Oie']);
+        return response(['message' => 'Evento alterado com sucesso!']);
     }
 
     public function checkAll(Request $request)
     {
-        Event::where('user_id', $request->user()->id)->update(['checked' => true]);
+        $notifications_ids = collect($request->notifications)
+            ->pluck('id');
+
+        $events = Event::whereIn('id', $notifications_ids)->get();
+
+        try {
+            Event::whereIn('id', $notifications_ids)->update(['checked' => true]);
+        } catch (\Throwable $th) {
+            Log::alert($th);
+        }
 
         return response([
             'message' => 'Todas as notificações marcadas como lidas.'
