@@ -59,8 +59,6 @@ class GeocodeScheduleJob implements ShouldQueue
                 if ($response->successful() && count($response->json()) > 0) {
                     $result = $response->json()[0];
 
-                    Log::alert($result);
-
                     $item->update([
                         'latitude' => $result['lat'],
                         'longitude' => $result['lon'],
