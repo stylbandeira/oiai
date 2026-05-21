@@ -2,9 +2,7 @@
 
 namespace App\Http\Resources;
 
-use Illuminate\Http\Resources\Json\JsonResource;
-
-class CompanyUserResource extends JsonResource
+class CompanyUserResource extends BaseUserResource
 {
     /**
      * Transform the resource into an array.
@@ -14,15 +12,15 @@ class CompanyUserResource extends JsonResource
      */
     public function toArray($request)
     {
+        return parent::toArray($request);
+    }
+
+    /**
+     * Method to be overwritten by child
+     */
+    protected function getUserSpecificFields(): array
+    {
         return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'type' => $this->type,
-            'email' => $this->email,
-            'points' => $this->points,
-            'reputation' => $this->reputation,
-            'cpf' => $this->cpf,
-            'status' => $this->status,
             'activeCompanies' => $this->whenLoaded('activeCompanies', $this->activeCompanies),
             'pendingCompanies' => $this->whenLoaded('pendingCompanies', function () {
                 return CompanyResource::collection($this->pendingCompanies);
