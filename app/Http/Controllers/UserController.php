@@ -6,6 +6,7 @@ use App\Http\Resources\AdminUserResource;
 use App\Http\Resources\ClientDashboardResource;
 use App\Http\Resources\ClientUserResource;
 use App\Http\Resources\CompanyUserResource;
+use App\Models\Event;
 use App\Models\User;
 use App\Services\ExportService;
 use Illuminate\Http\Request;
@@ -20,7 +21,7 @@ class UserController extends Controller
 
     public function dashboardData(Request $request)
     {
-        $user = Auth::user();
+        $user = User::with('recentActivity')->findOrFail(Auth::id());
 
         return response([
             'dashboardData' => new ClientDashboardResource($user)
