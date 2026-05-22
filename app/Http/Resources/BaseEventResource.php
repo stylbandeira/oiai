@@ -27,6 +27,14 @@ class BaseEventResource extends JsonResource
     }
 
     /**
+     * Method to be overwritten by child
+     */
+    protected function getUserSpecificFields(): array
+    {
+        return [];
+    }
+
+    /**
      * Transform the resource into an array.
      *
      * @param  \Illuminate\Http\Request  $request

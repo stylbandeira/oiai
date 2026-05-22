@@ -3,9 +3,19 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Log;
 
 class BaseUserResource extends JsonResource
 {
+    protected bool $withNotifications = false;
+
+    public function withNotifications(): static
+    {
+        $this->withNotifications = true;
+
+        return $this;
+    }
+
     /**
      * Campos comuns para TODOS os tipos de usuário
      */
@@ -19,10 +29,18 @@ class BaseUserResource extends JsonResource
             'type' => $this->type,
             'email' => $this->email,
             'points' => $this->points,
-            'notifications' => $this->notifications,
-            'notificationList' => $this->whenLoaded('events', function () {
-                return BaseEventResource::collection($this->events);
-            }),
+            'notifications' => $this->when(
+                $this->withNotifications,
+                fn() => BaseEventResource::collection(
+                    $this->notifications()->get()
+                )
+            ),
+            'notificationList' => $this->when(
+                $this->withNotifications,
+                fn() => BaseEventResource::collection(
+                    $this->visibleEvents()->get()
+                )
+            ),
             'token' => $this->token,
             'email_verified' => $this->hasVerifiedEmail()
         ];

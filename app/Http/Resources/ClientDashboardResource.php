@@ -19,7 +19,9 @@ class ClientDashboardResource extends JsonResource
             'points' => $this->points,
             'monthEconomy' => $this->monthEconomy,
             'reputation' => $this->reputation,
-            'recentActivity' => $this->recentActivity ? ClientEventResource::collection($this->recentActivity) : []
+            'recentActivity' => ClientEventResource::collection(
+                $this->whenLoaded('recentActivity')
+            ),
         ];
     }
 }

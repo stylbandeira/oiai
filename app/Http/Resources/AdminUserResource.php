@@ -23,7 +23,6 @@ class AdminUserResource extends BaseUserResource
         return [
             // 'img' => $this->img ? config('app.url') . '/storage/' . $this->img : null,
             'companies' => $this->whenLoaded('companies', $this->companies),
-            'notificationList' => $this->notificationList,
 
             //Only for Admin
             'email_verified_at' => $this->email_verified_at,

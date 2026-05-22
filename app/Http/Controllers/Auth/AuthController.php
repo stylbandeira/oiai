@@ -76,38 +76,22 @@ class AuthController extends Controller
     {
         $user = $request->user();
 
-        $events = Event::query()
-            ->where(function ($query) use ($user) {
-                $query->where('user_id', $user->id);
-
-                if ($user->type === 'admin') {
-                    $query->orWhere('target_type', 'admin');
-                }
-
-                $query->orWhere('target_type', 'all');
-            })
-            ->latest()
-            ->get();
-
-        $user->notificationList = $events;
-        $user->notifications = $events->where('checked', false)->count();
-
         if ($user->type === 'company') {
-            $user->load(['companies', 'activeCompanies', 'pendingCompanies']);
+            $user->load(['companies', 'activeCompanies', 'pendingCompanies', 'events']);
 
             return response([
-                'user' => new CompanyUserResource($user)
+                'user' => (new CompanyUserResource($user))->withNotifications()
             ]);
         }
 
         if ($user->type === 'admin') {
             return response([
-                'user' => new AdminUserResource($user)
+                'user' => (new AdminUserResource($user))->withNotifications()
             ]);
         }
 
         return response([
-            'user' => new ClientUserResource($user)
+            'user' => (new ClientUserResource($user))->withNotifications()
         ]);
     }
 

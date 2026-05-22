@@ -20,8 +20,7 @@ class User extends Authenticatable
 
     const POINTS = 'points';
     const ALLOWED_ACTIVITY_TYPE = [
-        Event::TYPE_PRODUCT_INSERT,
-        Event::TYPE_COMPANY_OWNER_REQUEST
+        Event::TYPE_PRODUCT_INSERT
     ];
 
     /**
@@ -119,11 +118,43 @@ class User extends Authenticatable
 
     public function recentActivity()
     {
-        return $this->hasMany(Event::class)->wherein('type', $this::ALLOWED_ACTIVITY_TYPE)->orderBy('created_at', 'DESC')->take(3);
+        return $this->hasMany(Event::class)->whereIn('title', $this::ALLOWED_ACTIVITY_TYPE)->orderBy('created_at', 'DESC')->take(5);
     }
 
     public function events()
     {
         return $this->hasMany(Event::class);
+    }
+
+    public function visibleEvents()
+    {
+        return Event::query()
+            ->where(function ($query) {
+
+                $query->where('user_id', $this->id);
+
+                if ($this->type === 'admin') {
+                    $query->orWhere('target_type', 'admin');
+                }
+
+                $query->orWhere('target_type', 'all');
+            });
+    }
+
+    public function notifications()
+    {
+        return Event::query()
+            ->where(function ($query) {
+
+                $query->where('user_id', $this->id);
+
+                if ($this->type === 'admin') {
+                    $query->orWhere('target_type', 'admin');
+                }
+
+                $query->orWhere('target_type', 'all');
+            })
+            ->where('checked', false)
+            ->latest();
     }
 }
