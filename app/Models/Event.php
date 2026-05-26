@@ -9,6 +9,7 @@ class Event extends Model
 {
     const TYPE_PRODUCT_INSERT = 'product_insert';
     const TYPE_COMPANY_OWNER_REQUEST = 'company_ownership_request';
+    const TYPE_COMPANY_OWNER_ALLOWED = 'company_ownership_allowed';
 
     use HasFactory;
     protected $table = 'event';

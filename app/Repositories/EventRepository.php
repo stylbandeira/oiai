@@ -95,6 +95,35 @@ class EventRepository
         }
     }
 
+    /**
+     * Create an event when a user is allowed as owner of a company.
+     *
+     * @param User $user
+     * @param Company $company
+     * @return void
+     */
+    public function createOwnershipAllowedEvent(User $user, Company $company)
+    {
+        $event = [
+            'user_id' => $user->id,
+            'title' => Event::TYPE_COMPANY_OWNER_ALLOWED,
+            'description' => 'Você foi autorizado como proprietário da empresa: ' . $company->name,
+            'where' => $company->name ?? '',
+            'type' => 'company',
+            'entity_type' => 'company',
+            'entity_id' => $company->id,
+            'points' => 0,
+            'link' => $this->generateLink(),
+            'target_type' => 'user',
+        ];
+
+        try {
+            $this->model->create($event);
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+    }
+
     protected function generateLink()
     {
         return '';
