@@ -11,6 +11,12 @@ class Company extends Model
 {
     use HasFactory, SoftDeletes;
 
+    const VALID_STATUSES = [
+        'active',
+        'inactive',
+        'pending'
+    ];
+
     protected $table = 'company';
     protected $fillable = [
         'address_id',

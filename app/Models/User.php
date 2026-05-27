@@ -19,6 +19,16 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     const POINTS = 'points';
+    const VALID_STATUSES = [
+        'active',
+        'inactive',
+        'suspended'
+    ];
+    const VALID_TYPES = [
+        'admin',
+        'client',
+        'company'
+    ];
     const ALLOWED_ACTIVITY_TYPE = [
         Event::TYPE_PRODUCT_INSERT
     ];
@@ -40,7 +50,8 @@ class User extends Authenticatable
     ];
 
     protected $attributes = [
-        'cpf' => null
+        'cpf' => null,
+        'must_change_password' => true
     ];
 
     /**
@@ -75,18 +86,21 @@ class User extends Authenticatable
 
     public function companies()
     {
-        return $this->belongsToMany(Company::class, 'company_owners', 'user_id', 'company_id');
+        return $this->belongsToMany(Company::class, 'company_owners', 'user_id', 'company_id')
+            ->withPivot(['status', 'message', 'approved_at', 'approved_by']);
     }
 
     public function activeCompanies()
     {
         return $this->belongsToMany(Company::class, 'company_owners', 'user_id', 'company_id')
+            ->withPivot(['status', 'message', 'approved_at', 'approved_by'])
             ->wherePivot('status', 'active');
     }
 
     public function pendingCompanies()
     {
         return $this->belongsToMany(Company::class, 'company_owners', 'user_id', 'company_id')
+            ->withPivot(['status', 'message', 'approved_at', 'approved_by'])
             ->wherePivot('status', 'pending');
     }
 

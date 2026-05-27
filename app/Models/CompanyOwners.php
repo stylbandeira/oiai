@@ -6,6 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class CompanyOwners extends Model
 {
+    const VALID_STATUSES = [
+        'active',
+        'inactive',
+        'pending'
+    ];
+
     protected $table = 'company_owners';
     protected $fillable = [
         'user_id',

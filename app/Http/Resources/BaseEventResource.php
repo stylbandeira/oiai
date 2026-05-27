@@ -15,12 +15,17 @@ class BaseEventResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'user_id' => $this->user_id,
             'title' => $this->title,
             'description' => $this->description,
             'where' => $this->where,
             'type' => $this->type,
             'points' => $this->points,
             'link' => $this->link,
+            'target_type' => $this->target_type,
+            'checked' => $this->checked,
+            'entity_type' => $this->entity_type,
+            'entity_id' => $this->entity_id,
             'is_new' => Carbon::now()->subDays(3) < $this->created_at,
             'created_at' => $this->created_at,
         ];

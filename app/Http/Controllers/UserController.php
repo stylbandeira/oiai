@@ -2,22 +2,30 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\Mappers\UserExportMapper;
+use App\Http\Requests\User\IndexUserRequest;
+use App\Http\Requests\User\UserStoreRequest;
+use App\Http\Requests\User\UserUpdateRequest;
 use App\Http\Resources\AdminUserResource;
 use App\Http\Resources\ClientDashboardResource;
 use App\Http\Resources\ClientUserResource;
 use App\Http\Resources\CompanyUserResource;
-use App\Models\Event;
 use App\Models\User;
+use App\Repositories\UserRepository;
 use App\Services\ExportService;
+use App\Services\User\StoreUserService;
+use App\Services\User\UpdateUserService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
+    public function __construct(
+        private UpdateUserService $updateUserService,
+        private StoreUserService $storeUserService,
+        private UserRepository $userRepository,
+    ) {}
 
     public function dashboardData(Request $request)
     {
@@ -31,117 +39,54 @@ class UserController extends Controller
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @param IndexUserRequest $request
+     * @return void
      */
-    public function index(Request $request)
+    public function index(IndexUserRequest $request)
     {
-        $query = User::query();
-        $user = Auth::user();
-
-        if ($request->has('search') && !empty($request->search)) {
-            $searchTerm = '%' . $request->search . '%';
-            $query->where(function ($q) use ($searchTerm) {
-                $q->where('name', 'like', $searchTerm)
-                    ->orWhere('email', 'like', $searchTerm)
-                    ->orWhere('cpf', 'like', $searchTerm);
-            });
+        if ($request->user()->type !== 'admin') {
+            return response([
+                'message' => 'Não autorizado'
+            ], 403);
         }
 
-        if ($request->has('status') && $request->status !== 'all') {
-            $query->where('status', $request->status);
-        }
-
-        if ($request->has('type') && $request->type !== 'all') {
-            $query->where('type', $request->type);
-        }
-
-        $sortField = $request->get('sort_by', 'created_at');
-        $sortOrder = $request->get('sort_order', 'desc');
-
-        $validSortFields = ['name', 'points', 'reputation', 'created_at'];
-
-        if (in_array($sortField, $validSortFields)) {
-            $query->orderBy($sortField, $sortOrder);
-        } else {
-            $query->orderBy('created_at', 'desc');
-        }
-
-        if ($user->type === 'admin') {
-            $query->withTrashed();
-        }
-
-        $perPage = $request->per_page ?? 10;
-
-        $users = $query->paginate($perPage);
+        $users = $this->userRepository->paginate(
+            $request->validated(),
+            [
+                'with_trashed' => $request->user()->type === 'admin'
+            ]
+        );
 
         if ($request->user()->type === 'admin') {
             return AdminUserResource::collection($users);
         }
-
-        return response([
-            'message' => 'Erro de autorização'
-        ], 403);
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Store a new user.
      *
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(UserStoreRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'string|required',
-            'type' => 'string|required',
-            'email' => 'email|required',
-            'cpf' => 'string|required',
-            'status' => 'string',
-            'companies' => 'array',
-            'companies.*' => 'exists:company,id'
-        ]);
-
-        if ($validator->fails()) {
-            return response([
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        DB::beginTransaction();
-
         try {
-            $temporaryPassword = Str::uuid();
-
-            $user = User::create([
-                'name' => $request->name,
-                'type' => $request->type,
-                'email' => $request->email,
-                'cpf' => $request->cpf,
-                'status' => $request->status,
-                'password' => bcrypt($temporaryPassword),
-                'email_verified_at' => null,
-                'must_change_password' => true,
-            ]);
-
-            if ($request->type === 'company' && $request->has('companies')) {
-                $user->companies()->attach($request->companies);
-            }
-
-            DB::commit();
-
-            $this->sendWelcomeEmail($user, $temporaryPassword);
+            $user = $this->storeUserService->execute(
+                $request->validated(),
+                Auth::id()
+            );
 
             return response([
                 'message' => 'Usuário criado com sucesso!',
                 'user' => $user
             ]);
         } catch (\Throwable $th) {
-            DB::rollBack();
-            Log::alert("Erro");
-
-            return response()->json([
-                'message' => 'Erro ao criar usuário',
+            Log::error('Erro ao criar usuário', [
                 'error' => $th->getMessage()
-            ], 500);
+            ]);
+
+            return response([
+                'error' => $th->getMessage()
+            ]);
         }
     }
 
@@ -168,69 +113,22 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  User  $user
-     * @return \Illuminate\Http\Response
+     * @param UserUpdateRequest $request
+     * @param User $user
+     * @return void
      */
-    public function update(Request $request, User $user)
+    public function update(UserUpdateRequest $request, User $user)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'string',
-            'type' => 'string',
-            'email' => 'email',
-            'cpf' => 'string',
-            'status' => 'string',
-            'companies' => 'array',
-            'companies.*' => 'exists:company,id'
+        $user = $this->updateUserService->execute(
+            $user,
+            $request->validated(),
+            Auth::id()
+        );
+
+        return response([
+            'message' => 'Usuário editado com sucesso!',
+            'user' => new AdminUserResource($user),
         ]);
-
-        if ($validator->fails()) {
-            return response([
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        if ($request->type === 'company' && $request->has('companies')) {
-            Log::alert('Update User');
-            $user->companies()->detach();
-            $user->companies()->attach($request->companies);
-        }
-
-        DB::beginTransaction();
-
-        try {
-
-            $user->update([
-                'name' => $request->name,
-                'type' => $request->type,
-                'email' => $request->email,
-                'cpf' => $request->cpf,
-                'status' => $request->status,
-            ]);
-
-            if ($request->type === 'company' && $request->has('companies')) {
-                Log::alert('Update User');
-                $user->companies()->detach();
-                $user->companies()->attach($request->companies);
-            }
-
-            $user->save();
-
-            DB::commit();
-
-            return response([
-                'message' => 'Usuário editado com sucesso!',
-                'user' => new AdminUserResource($user)
-            ]);
-        } catch (\Throwable $th) {
-            DB::rollBack();
-            Log::alert("Erro");
-
-            return response()->json([
-                'message' => 'Erro ao criar usuário',
-                'error' => $th->getMessage()
-            ], 500);
-        }
     }
 
     /**
@@ -241,7 +139,9 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
-        if (!$user->companies) {
+        $user->load('companies');
+
+        if (count($user->companies)) {
             return response([
                 'message' => 'Apague a relação entre usuário e empresa primeiro.'
             ], 400);
@@ -255,13 +155,17 @@ class UserController extends Controller
 
         if ($user->deleted_at) {
             $user->deleted_at == null;
+
+            return response([
+                'message' => 'Usuário reativado com sucesso!'
+            ]);
         } else {
             $user->delete();
-        }
 
-        return response([
-            'message' => 'Usuário excluído com sucesso!'
-        ]);
+            return response([
+                'message' => 'Usuário excluído com sucesso!'
+            ]);
+        }
     }
 
     /**
@@ -291,74 +195,19 @@ class UserController extends Controller
     /**
      * Export users to CSV
      */
-    public function export(Request $request, ExportService $exportService)
-    {
-        $query = User::query();
-        $user = Auth::user();
+    public function export(
+        IndexUserRequest $request,
+        ExportService $exportService,
+        UserExportMapper $mapper
 
-        if ($request->has('search') && $request->search) {
-            $query->where(function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->search . '%')
-                    ->orWhere('email', 'like', '%' . $request->search . '%')
-                    ->orWhere('cpf', 'like', '%' . $request->search . '%');
-            });
-        }
+    ) {
+        $users = $this->userRepository->list($request->validated());
 
-        if ($request->has('type') && $request->type !== 'all') {
-            $query->where('type', $request->type);
-        }
-
-        if ($request->has('status') && $request->status !== 'all') {
-            $query->where('status', $request->status);
-        }
-
-        if ($request->has('sort_by') && $request->has('sort_order')) {
-            $validSortFields = ['name', 'points', 'reputation', 'created_at'];
-            if (in_array($request->sort_by, $validSortFields)) {
-                $query->orderBy($request->sort_by, $request->sort_order);
-            }
-        } else {
-            $query->orderBy('created_at', 'desc');
-        }
-
-        if ($user->type === 'admin') {
-            $query->withTrashed();
-        }
-
-        $users = $query->get();
-
-        $columns = [
-            'ID' => 'id',
-            'Nome' => 'name',
-            'Email' => 'email',
-            'CPF' => 'cpf',
-            'Tipo' => function ($user) {
-                $types = [
-                    'client' => 'Cliente',
-                    'company' => 'Empresa',
-                    'admin' => 'Administrador'
-                ];
-                return $types[$user->type] ?? $user->type;
-            },
-            'Pontos' => 'points',
-            'Reputação' => 'reputation',
-            'Status' => function ($user) {
-                $statuses = [
-                    'active' => 'Ativo',
-                    'inactive' => 'Inativo',
-                    'suspended' => 'Suspenso'
-                ];
-                return $statuses[$user->status] ?? $user->status;
-            },
-            'Data de Criação' => function ($user) {
-                return $user->created_at->format('d/m/Y H:i:s');
-            },
-            'Data de Exclusão' => function ($user) {
-                return $user->deleted_at ? $user->deleted_at->format('d/m/Y H:i:s') : '-';
-            },
-        ];
-
-        return $exportService->exportToCSV($users, $columns, 'usuarios');
+        return $exportService->exportToCSV(
+            $users,
+            $mapper->columns(),
+            'usuarios'
+        );
     }
 
     /**
