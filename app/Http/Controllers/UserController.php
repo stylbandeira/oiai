@@ -119,6 +119,7 @@ class UserController extends Controller
      */
     public function update(UserUpdateRequest $request, User $user)
     {
+        Log::alert($request);
         $user = $this->updateUserService->execute(
             $user,
             $request->validated(),

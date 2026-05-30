@@ -117,8 +117,6 @@ class CompanyOwnersController extends Controller
             'raw_address' => 'string',
         ]);
 
-        Log::alert($request->all());
-
         if ($validator->fails()) {
             return response([
                 'errors' => $validator->errors()

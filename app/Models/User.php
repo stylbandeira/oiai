@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Log;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
@@ -142,6 +143,35 @@ class User extends Authenticatable
 
     public function visibleEvents()
     {
+        $companiesIds = collect($this->companies)->pluck('id');
+
+        return Event::query()
+            ->where(function ($query) use ($companiesIds) {
+
+                if ($this->type === 'user') {
+                    $query->where('user_id', $this->id)
+                        ->where('checked', false);
+                }
+
+                if ($this->type === 'admin') {
+                    $query->orWhere('target_type', 'admin');
+                }
+
+                if ($this->type === 'company') {
+                    $query->orWhere(function ($query) use ($companiesIds) {
+                        $query->where('target_type', 'company')
+                            ->where('entity_type', 'company')
+                            ->whereIn('entity_id', $companiesIds)
+
+                            ->orWhere('target_type', 'company')
+                            ->where('entity_type', 'user')
+                            ->where('entity_id', $this->id);
+                    })->where('checked', false);
+                }
+
+                $query->orWhere('target_type', 'all');
+            });
+
         return Event::query()
             ->where(function ($query) {
 

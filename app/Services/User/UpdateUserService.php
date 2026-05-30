@@ -3,14 +3,14 @@
 namespace App\Services\User;
 
 use App\Models\User;
-use App\Services\UserCompanies\UserCompanyAccessService;
+use App\Services\CompanyOwners\CompanyOwnerService;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 
 class UpdateUserService
 {
     public function __construct(
-        private UserCompanyAccessService $companyAccessService
+        private CompanyOwnerService $companyAccessService
     ) {}
 
     public function execute(User $user, array $data, int $approvedBy): User
