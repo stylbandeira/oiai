@@ -6,10 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class CompanyOwners extends Model
 {
+    const STATUS_ACTIVE = 'active';
+    const STATUS_INACTIVE = 'inactive';
+    const STATUS_PENDING = 'pending';
+
     const VALID_STATUSES = [
-        'active',
-        'inactive',
-        'pending'
+        self::STATUS_ACTIVE,
+        self::STATUS_INACTIVE,
+        self::STATUS_PENDING,
     ];
 
     protected $table = 'company_owners';
