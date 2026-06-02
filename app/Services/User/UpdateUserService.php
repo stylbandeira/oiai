@@ -18,14 +18,11 @@ class UpdateUserService
         $user->update($data);
 
         if ($user->type === 'company') {
-            Log::alert('sync');
             $this->companyOwnerService->sync($user, $data['companies'], $approvedBy);
         } else {
             $this->companyOwnerService->detach($user);
         }
 
-
-        Log::alert('sync - out');
 
         return $user->load('companies');
     }
