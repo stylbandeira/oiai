@@ -38,7 +38,9 @@ class BaseUserResource extends JsonResource
             'notificationList' => $this->when(
                 $this->withNotifications,
                 fn() => BaseEventResource::collection(
-                    $this->visibleEvents()->get()
+                    $this->visibleEvents()
+                        ->latest()
+                        ->get()
                 )
             ),
             'token' => $this->token,
