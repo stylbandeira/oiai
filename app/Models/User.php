@@ -148,7 +148,7 @@ class User extends Authenticatable
         return Event::query()
             ->where(function ($query) use ($companiesIds) {
 
-                if ($this->type === 'user') {
+                if ($this->type === 'client') {
                     $query->where('user_id', $this->id)
                         ->where('checked', false);
                 }
