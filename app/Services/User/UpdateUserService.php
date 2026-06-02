@@ -2,15 +2,15 @@
 
 namespace App\Services\User;
 
+use App\Models\CompanyOwners;
 use App\Models\User;
 use App\Services\CompanyOwners\CompanyOwnerService;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class UpdateUserService
 {
     public function __construct(
-        private CompanyOwnerService $companyAccessService
+        private CompanyOwnerService $companyOwnerService
     ) {}
 
     public function execute(User $user, array $data, int $approvedBy): User
@@ -18,10 +18,14 @@ class UpdateUserService
         $user->update($data);
 
         if ($user->type === 'company') {
-            $this->companyAccessService->sync($user, $data['companies'], $approvedBy);
+            Log::alert('sync');
+            $this->companyOwnerService->sync($user, $data['companies'], $approvedBy);
         } else {
-            $this->companyAccessService->detach($user);
+            $this->companyOwnerService->detach($user);
         }
+
+
+        Log::alert('sync - out');
 
         return $user->load('companies');
     }

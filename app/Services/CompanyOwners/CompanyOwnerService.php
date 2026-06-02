@@ -10,14 +10,33 @@ use Illuminate\Support\Facades\Log;
 class CompanyOwnerService
 {
     public function __construct(
-        protected NotificationService $notificationService
+        private NotificationService $notificationService
     ) {}
 
     public function sync(User $user, array $companies, ?int $approvedBy): void
     {
-        $user->companies()->sync(
-            $this->normalizeForSync($user, $companies, $approvedBy)
-        );
+        $oldCompanyIds = $user->companies
+            ->pluck('companies.id')
+            ->toArray();
+
+        $syncData = $this->normalizeForSync($user, $companies, $approvedBy);
+
+        $user->companies()->sync($syncData);
+
+        $newCompanyIds = array_values(array_diff(
+            array_keys($syncData),
+            $oldCompanyIds
+        ));
+
+        if (empty($newCompanyIds)) {
+            return;
+        }
+
+        $newCompanies = Company::whereIn('id', $newCompanyIds)->get();
+
+        foreach ($newCompanies as $company) {
+            $this->notificationService->userOwnershipRequestActivated($user, $company);
+        }
     }
 
     public function detach(User $user): void
@@ -30,14 +49,6 @@ class CompanyOwnerService
         return collect($companies)
             ->mapWithKeys(function (array $company) use ($user, $approvedBy) {
                 $status = $company['status'] ?? 'active';
-
-                try {
-                    $this->notificationService->userOwnershipRequestActivated($user, Company::find($company['id']));
-                } catch (\Throwable $th) {
-                    Log::error('Não foi possível criar notificação para a empresa', [
-                        'error' => $th->getMessage()
-                    ]);
-                }
 
                 return [
                     (int) $company['id'] => $this->buildPivotData(
