@@ -171,34 +171,11 @@ class User extends Authenticatable
 
                 $query->orWhere('target_type', 'all');
             });
-
-        return Event::query()
-            ->where(function ($query) {
-
-                $query->where('user_id', $this->id);
-
-                if ($this->type === 'admin') {
-                    $query->orWhere('target_type', 'admin');
-                }
-
-                $query->orWhere('target_type', 'all');
-            });
     }
 
     public function notifications()
     {
-        return Event::query()
-            ->where(function ($query) {
-
-                $query->where('user_id', $this->id);
-
-                if ($this->type === 'admin') {
-                    $query->orWhere('target_type', 'admin');
-                }
-
-                $query->orWhere('target_type', 'all');
-            })
-            ->where('checked', false)
-            ->latest();
+        return $this->visibleEvents()
+            ->where('checked', false);
     }
 }
