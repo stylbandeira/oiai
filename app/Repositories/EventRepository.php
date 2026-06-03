@@ -54,7 +54,7 @@ class EventRepository
             'where' => $company->name ?? '',
             'type' => 'client',
             'points' => $quantity,
-            'link' => $this->generateLink()
+            'link' => Event::TYPE_PRODUCT_INSERT,
         ];
 
         try {
@@ -76,7 +76,7 @@ class EventRepository
         $event = [];
 
         $event = [
-            'user_id' => null,
+            'user_id' => $user->id,
             'title' => Event::TYPE_COMPANY_OWNER_REQUEST,
             'description' => ucwords(strtolower($user->name)) . ' solicitou acesso de admin à empresa: ' . $company->name,
             'where' => $company->name ?? '',
@@ -84,7 +84,7 @@ class EventRepository
             'entity_type' => 'user',
             'entity_id' => $user->id,
             'points' => 0,
-            'link' => $this->generateLink(),
+            'link' => Event::TYPE_COMPANY_OWNER_REQUEST,
             'target_type' => 'admin',
         ];
 
@@ -95,8 +95,32 @@ class EventRepository
         }
     }
 
-    protected function generateLink()
+    /**
+     * Create an event when a user is allowed as owner of a company.
+     *
+     * @param User $user
+     * @param Company $company
+     * @return void
+     */
+    public function createOwnershipAllowedEvent(User $user, Company $company)
     {
-        return '';
+        $event = [
+            'user_id' => $user->id,
+            'title' => Event::TYPE_COMPANY_OWNER_ALLOWED,
+            'description' => 'Você foi autorizado como proprietário da empresa: ' . $company->name,
+            'where' => $company->name ?? '',
+            'type' => 'company',
+            'entity_type' => 'company',
+            'entity_id' => $company->id,
+            'points' => 0,
+            'link' => Event::TYPE_COMPANY_OWNER_ALLOWED,
+            'target_type' => 'user',
+        ];
+
+        try {
+            $this->model->create($event);
+        } catch (\Throwable $th) {
+            throw $th;
+        }
     }
 }

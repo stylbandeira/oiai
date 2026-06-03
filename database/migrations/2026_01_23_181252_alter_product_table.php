@@ -14,11 +14,6 @@ return new class extends Migration
     public function up()
     {
         Schema::table('products', function (Blueprint $table) {
-            $table->dropColumn('ean');
-            $table->dropColumn('description');
-        });
-
-        Schema::table('products', function (Blueprint $table) {
             $table->string('ean', 30)->nullable()->unique();
             $table->string('description');
         });

@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Log;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
@@ -19,6 +20,16 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     const POINTS = 'points';
+    const VALID_STATUSES = [
+        'active',
+        'inactive',
+        'suspended'
+    ];
+    const VALID_TYPES = [
+        'admin',
+        'client',
+        'company'
+    ];
     const ALLOWED_ACTIVITY_TYPE = [
         Event::TYPE_PRODUCT_INSERT
     ];
@@ -40,7 +51,8 @@ class User extends Authenticatable
     ];
 
     protected $attributes = [
-        'cpf' => null
+        'cpf' => null,
+        'must_change_password' => true
     ];
 
     /**
@@ -75,18 +87,21 @@ class User extends Authenticatable
 
     public function companies()
     {
-        return $this->belongsToMany(Company::class, 'company_owners', 'user_id', 'company_id');
+        return $this->belongsToMany(Company::class, 'company_owners', 'user_id', 'company_id')
+            ->withPivot(['status', 'message', 'approved_at', 'approved_by']);
     }
 
     public function activeCompanies()
     {
         return $this->belongsToMany(Company::class, 'company_owners', 'user_id', 'company_id')
+            ->withPivot(['status', 'message', 'approved_at', 'approved_by'])
             ->wherePivot('status', 'active');
     }
 
     public function pendingCompanies()
     {
         return $this->belongsToMany(Company::class, 'company_owners', 'user_id', 'company_id')
+            ->withPivot(['status', 'message', 'approved_at', 'approved_by'])
             ->wherePivot('status', 'pending');
     }
 
@@ -128,13 +143,30 @@ class User extends Authenticatable
 
     public function visibleEvents()
     {
-        return Event::query()
-            ->where(function ($query) {
+        $companiesIds = collect($this->companies)->pluck('id');
 
-                $query->where('user_id', $this->id);
+        return Event::query()
+            ->where(function ($query) use ($companiesIds) {
+
+                if ($this->type === 'client') {
+                    $query->where('user_id', $this->id)
+                        ->where('checked', false);
+                }
 
                 if ($this->type === 'admin') {
                     $query->orWhere('target_type', 'admin');
+                }
+
+                if ($this->type === 'company') {
+                    $query->orWhere(function ($query) use ($companiesIds) {
+                        $query->where('target_type', 'company')
+                            ->where('entity_type', 'company')
+                            ->whereIn('entity_id', $companiesIds)
+
+                            ->orWhere('target_type', 'company')
+                            ->where('entity_type', 'user')
+                            ->where('entity_id', $this->id);
+                    })->where('checked', false);
                 }
 
                 $query->orWhere('target_type', 'all');
@@ -143,18 +175,7 @@ class User extends Authenticatable
 
     public function notifications()
     {
-        return Event::query()
-            ->where(function ($query) {
-
-                $query->where('user_id', $this->id);
-
-                if ($this->type === 'admin') {
-                    $query->orWhere('target_type', 'admin');
-                }
-
-                $query->orWhere('target_type', 'all');
-            })
-            ->where('checked', false)
-            ->latest();
+        return $this->visibleEvents()
+            ->where('checked', false);
     }
 }
