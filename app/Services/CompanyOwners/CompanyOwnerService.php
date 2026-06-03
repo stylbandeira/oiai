@@ -16,7 +16,7 @@ class CompanyOwnerService
     public function sync(User $user, array $companies, ?int $approvedBy): void
     {
         $oldCompanyIds = $user->companies
-            ->pluck('companies.id')
+            ->pluck('id')
             ->toArray();
 
         $syncData = $this->normalizeForSync($user, $companies, $approvedBy);
@@ -32,7 +32,9 @@ class CompanyOwnerService
             return;
         }
 
-        $newCompanies = Company::whereIn('id', $newCompanyIds)->get();
+        $newCompanies = Company::whereIn('id', $newCompanyIds)
+            ->whereNotIn('id', $oldCompanyIds)
+            ->get();
 
         foreach ($newCompanies as $company) {
             $this->notificationService->userOwnershipRequestActivated($user, $company);
