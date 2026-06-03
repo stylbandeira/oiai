@@ -134,7 +134,7 @@ class ProductController extends Controller
             ], 400);
         }
 
-        if ($request->user()->type === 'client' && $request->validated === false) {
+        if ($request->user()->type === 'client' && $product->validated === true) {
             return response([
                 'message' => 'Você não tem permissão para alterar esse produto',
             ], 403);

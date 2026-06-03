@@ -9,10 +9,8 @@ use App\Models\Company;
 use App\Repositories\CompanyRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use Inertia\Inertia;
 
 class CompanyController extends Controller
 {
@@ -48,17 +46,6 @@ class CompanyController extends Controller
         }
 
         return ClientCompanyResource::collection($companies);
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        // Inertia::render('Welcome', []);
-        return Inertia::render('Company/CreateCompany', []);
     }
 
     /**
@@ -133,22 +120,6 @@ class CompanyController extends Controller
             ], 403);
         }
 
-
-        // // TODO - VERIFICAR SE O COMPANY QUE VIRÁ NA FUNÇÃO É A MESMA QUE O USUÁRIO TEM ACESSO
-        // $user_companies_ids = $request->user()->companies->pluck('id')->toArray();
-        // $company = $request->user()->activeCompanies[0] ?? false;
-
-        // if (
-        //     $request->user()->type !== 'company' ||
-        //     // !in_array($company->id, $user_companies_ids)
-        //     $user_companies_ids < 1 ||
-        //     !$company
-        // ) {
-        //     return response([
-        //         'error' => 'Apenas empresas podem ter acessos aos seus respectivos dados'
-        //     ], 403);
-        // }
-
         // TODO - ATUALIZAR DADOS
         return response([
             'company' => new CompanyResource($company),
@@ -157,26 +128,6 @@ class CompanyController extends Controller
             'monthlyUpdates' => 0,
             'userEngagement' => 0
         ]);
-    }
-
-    // TODO
-    public function submit(Request $request)
-    {
-        Log::alert($request->all());
-        return response([
-            'message' => 'Solicitação feita com sucesso!'
-        ]);
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\Company  $company
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(Company $company)
-    {
-        //
     }
 
     /**

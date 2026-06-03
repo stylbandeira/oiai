@@ -5,7 +5,6 @@ namespace App\Services\CompanyOwners;
 use App\Models\Company;
 use App\Models\User;
 use App\Services\NotificationService;
-use Illuminate\Support\Facades\Log;
 
 class CompanyOwnerService
 {

@@ -36,7 +36,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::prefix('admin')->group(function () {
         Route::post('/users/revertDeleted/{id}', [UserController::class, 'revertDestroy']);
         Route::get('/users/export', [UserController::class, 'export']);
-        Route::put('/users/{user}/companies', [CompanyOwnersController::class, 'updateUserCompanies']);
         Route::get('/dashboard', [AdminController::class, 'dashboard']);
 
         Route::apiResource('/companies', CompanyController::class);

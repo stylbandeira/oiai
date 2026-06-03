@@ -36,7 +36,6 @@ class AddressController extends Controller
      */
     public function store(Request $request)
     {
-        dd($request->all());
         $validator = Validator::make($request->all(), [
             'country' => 'required|string',
             'area' => 'required|string',

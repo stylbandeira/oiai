@@ -50,7 +50,7 @@ class FavoriteProductsController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $user = $request->usser();
+        $user = $request->user();
     }
 
     /**

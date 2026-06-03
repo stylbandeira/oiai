@@ -57,9 +57,7 @@ class UserController extends Controller
             ]
         );
 
-        if ($request->user()->type === 'admin') {
-            return AdminUserResource::collection($users);
-        }
+        return AdminUserResource::collection($users);
     }
 
     /**
@@ -119,7 +117,6 @@ class UserController extends Controller
      */
     public function update(UserUpdateRequest $request, User $user)
     {
-        Log::alert($request);
         $user = $this->updateUserService->execute(
             $user,
             $request->validated(),
