@@ -84,7 +84,7 @@ class CompanyController extends Controller
         if ($validator->fails()) {
             return response([
                 'errors' => $validator->errors()
-            ], 400);
+            ], 422);
         }
 
         $validatedData = $request->all();
