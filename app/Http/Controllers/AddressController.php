@@ -2,12 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Address\AddressStoreRequest;
 use App\Models\Address;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class AddressController extends Controller
 {
+    public function __construct()
+    {
+        $this->authorizeResource(Address::class, 'address');
+    }
     /**
      * Display a listing of the resource.
      *
@@ -31,27 +37,12 @@ class AddressController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @param AddressStoreRequest $request
+     * @return void
      */
-    public function store(Request $request)
+    public function store(AddressStoreRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'country' => 'required|string',
-            'area' => 'required|string',
-            'city' => 'required|string',
-            'street' => 'required|string',
-            'number' => 'required|string',
-            'complement' => 'string',
-        ]);
-
-        if ($validator->fails()) {
-            return response([
-                'errors' => $validator->errors()
-            ], 400);
-        }
-
-        $address = Address::create($request->all());
+        $address = Address::create($request->validated());
 
         return response([
             'address' => $address
