@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AddressController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CompanyController;
@@ -70,6 +71,9 @@ Route::put('/listItems/{id}', [ListItensController::class, 'update']);
 // Rotas autenticadas
 Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
+
+    // ADDRESS
+    Route::apiResource('/addresses', AddressController::class);
 
     // LIST
     Route::post('/lists/{list}/optimize', [ListController::class, 'optimize']);
