@@ -2,9 +2,7 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-
-class CompanyOwners extends Model
+class CompanyOwners extends BaseModel
 {
     const STATUS_ACTIVE = 'active';
     const STATUS_INACTIVE = 'inactive';

@@ -3,9 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 
-class Event extends Model
+class Event extends BaseModel
 {
     const TYPE_PRODUCT_INSERT = 'product_insert';
     const TYPE_COMPANY_OWNER_REQUEST = 'company_ownership_request';

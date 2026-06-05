@@ -178,4 +178,9 @@ class User extends Authenticatable
         return $this->visibleEvents()
             ->where('checked', false);
     }
+
+    public function isAdmin(): bool
+    {
+        return $this->type === 'admin';
+    }
 }

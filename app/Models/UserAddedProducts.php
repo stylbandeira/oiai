@@ -3,9 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 
-class UserAddedProducts extends Model
+class UserAddedProducts extends BaseModel
 {
     use HasFactory;
     protected $table = 'user_added_products';
