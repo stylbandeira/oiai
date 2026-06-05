@@ -33,7 +33,7 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
 
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::prefix('admin')->group(function () {
         Route::post('/users/revertDeleted/{id}', [UserController::class, 'revertDestroy']);
         Route::get('/users/export', [UserController::class, 'export']);
