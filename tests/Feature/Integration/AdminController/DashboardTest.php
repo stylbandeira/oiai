@@ -18,7 +18,7 @@ class DashboardTest extends TestCase
         $response->assertStatus(401);
     }
 
-    public function test_forbidden(): void
+    public function test_forbidden_for_client(): void
     {
         $client = User::factory()->create([
             'type' => 'client',
@@ -26,6 +26,19 @@ class DashboardTest extends TestCase
         ]);
 
         $response = $this->actingAs($client)
+            ->getJson('/api/admin/dashboard');
+
+        $response->assertStatus(403);
+    }
+
+    public function test_forbidden_for_company(): void
+    {
+        $company = User::factory()->create([
+            'type' => 'company',
+            'email_verified_at' => now(),
+        ]);
+
+        $response = $this->actingAs($company)
             ->getJson('/api/admin/dashboard');
 
         $response->assertStatus(403);
