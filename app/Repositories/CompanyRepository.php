@@ -68,6 +68,8 @@ class CompanyRepository
 
         if ($request->user()->type === 'admin') {
 
+            $query->withTrashed();
+
             //TO-DO - QUERO DEIXAR ISSO MAIS AUTOMÁTICO
             if ($request->has('status')) {
                 $query->where('status', $request->status);
