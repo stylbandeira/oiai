@@ -32,8 +32,9 @@ class ListController extends Controller
         $perPage = $request->per_page ?? 15;
 
         $itensList = ItensList::where('user_id', $user->id)
-            ->orderBy('created_at', 'desc')
             ->with(['products', 'listProducts.product.unity', 'listProducts.product.category'])
+            ->latest()
+            ->orderByDesc('id')
             ->paginate($perPage);
 
         return ClientListResource::collection($itensList);
