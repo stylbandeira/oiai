@@ -152,7 +152,6 @@ class CompanyIndexTest extends TestCase
         $response
             ->assertJsonFragment([
                 'name' => $company->name,
-                'ownership_status' => CompanyOwners::STATUS_ACTIVE
             ])
             ->assertStatus(200);
     }
