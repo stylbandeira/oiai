@@ -17,13 +17,9 @@ class ItensListPolicy
      * @param  \App\Models\User  $user
      * @return \Illuminate\Auth\Access\Response|bool
      */
-    public function viewAny(User $user, ItensList $itensList)
+    public function viewAny(User $user)
     {
-        if ($user->type === 'admin') {
-            return true;
-        } else if ($user->type === 'client' && $itensList->user_id === $user->id) {
-            return true;
-        }
+        return true;
     }
 
     /**
