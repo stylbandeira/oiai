@@ -6,6 +6,7 @@ use App\Models\FavoriteProducts;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class FavoriteProductsController extends Controller
 {
@@ -64,17 +65,33 @@ class FavoriteProductsController extends Controller
     {
         $user = $request->user();
 
+        $validator = Validator::make($request->all(), [
+            'favorite' => 'sometimes|boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response([
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
         try {
             $favorite = FavoriteProducts::where('user_id', $user->id)
                 ->where('product_id', $product->id)
                 ->first();
 
-            if (!$favorite) {
+            $shouldFavorite = $request->has('favorite')
+                ? $validator->validated()['favorite']
+                : !$favorite;
+
+            if ($shouldFavorite && !$favorite) {
                 FavoriteProducts::create([
                     'user_id' => $user->id,
                     'product_id' => $product->id
                 ]);
-            } else {
+            }
+
+            if (!$shouldFavorite && $favorite) {
                 $favorite->delete();
             }
         } catch (\Throwable $th) {
@@ -89,7 +106,7 @@ class FavoriteProductsController extends Controller
         }
 
         return response([
-            'message' => 'Produto favoritado'
+            'message' => $shouldFavorite ? 'Produto favoritado' : 'Produto desfavoritado'
         ]);
     }
 
