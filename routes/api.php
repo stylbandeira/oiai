@@ -65,7 +65,7 @@ Route::post('/email/resend', [AuthController::class, 'resendVerificationEmail'])
     ->middleware(['auth:sanctum', 'throttle:6,1'])
     ->name('verification.resend');
 
-Route::get('/lists/{id}', [ListController::class, 'show']);
+Route::get('/lists/{list}', [ListController::class, 'show']);
 Route::put('/listItems/{id}', [ListItensController::class, 'update']);
 
 // Rotas autenticadas
@@ -81,8 +81,8 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
 
     Route::get('/lists', [ListController::class, 'index']);
     Route::post('/lists', [ListController::class, 'store']);
-    Route::put('/lists/{id}', [ListController::class, 'update']);
-    Route::delete('/lists/{id}', [ListController::class, 'destroy']);
+    Route::put('/lists/{list}', [ListController::class, 'update']);
+    Route::delete('/lists/{list}', [ListController::class, 'destroy']);
 
     // Route::apiResource('/listItems', ListItensController::class);
 
