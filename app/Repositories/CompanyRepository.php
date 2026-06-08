@@ -71,13 +71,6 @@ class CompanyRepository
             $query->where('status', $request->status);
         }
 
-        if ($request->user()->type === 'company') {
-            $query->with('ownerRelationship')
-                ->whereHas('ownerRelationship', function ($query) use ($request) {
-                    $query->where('user_id', $request->user()->id);
-                });
-        }
-
         if ($request->user()->type === 'admin') {
 
             $query->withTrashed();
