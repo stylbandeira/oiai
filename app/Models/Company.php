@@ -10,10 +10,14 @@ class Company extends BaseModel
 {
     use HasFactory, SoftDeletes;
 
+    const STATUS_ACTIVE = 'active';
+    const STATUS_INACTIVE = 'INACTIVE';
+    const STATUS_PENDING = 'pending';
+
     const VALID_STATUSES = [
-        'active',
-        'inactive',
-        'pending'
+        self::STATUS_ACTIVE,
+        self::STATUS_INACTIVE,
+        self::STATUS_PENDING
     ];
 
     protected $table = 'company';
@@ -63,5 +67,10 @@ class Company extends BaseModel
     public function address()
     {
         return $this->hasOne(Address::class, 'id', 'address_id');
+    }
+
+    public function isActive(): bool
+    {
+        return $this->status === self::STATUS_ACTIVE;
     }
 }
