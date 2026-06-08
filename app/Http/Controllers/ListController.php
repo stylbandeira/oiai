@@ -12,10 +12,15 @@ use App\Models\ListProducts;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class ListController extends Controller
 {
+    public function __construct()
+    {
+        $this->authorizeResource(ItensList::class, 'list');
+    }
     /**
      * Display a listing of the resource.
      *
@@ -28,22 +33,10 @@ class ListController extends Controller
 
         $itensList = ItensList::where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
-            ->with('products')
+            ->with(['products', 'listProducts.product.unity', 'listProducts.product.category'])
             ->paginate($perPage);
 
-        return response([
-            'itensLists' => ClientListResource::collection($itensList)
-        ]);
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        //
+        return ClientListResource::collection($itensList);
     }
 
     /**
@@ -56,61 +49,66 @@ class ListController extends Controller
     {
         $user = Auth::user();
 
+        if ($user->type !== 'client') {
+            return response([
+                'message' => 'Apenas clientes podem criar listas.'
+            ], 403);
+        }
+
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string'
+            'name' => 'required|string',
+            'products' => 'required|array|min:1',
+            'products.*.product.id' => 'required|integer|exists:products,id',
+            'products.*.quantity' => 'required|numeric|min:0.01',
         ]);
 
         if ($validator->fails()) {
             return response([
                 'message' => 'Erro ao tentar criar lista',
                 'errors' => $validator->errors()
-            ], 403);
+            ], 422);
         }
 
-        //Cria lista
-        $list = ItensList::create([
-            'user_id' => $user->id,
-            'name' => $request->name,
-            'favorite' => false,
-            'total' => 0,
-        ]);
+        $list = DB::transaction(function () use ($request, $user) {
+            $list = ItensList::create([
+                'user_id' => $user->id,
+                'name' => $request->name,
+                'favorite' => false,
+                'total' => 0,
+            ]);
 
-        $productsWithQuantities = [];
-        $productIds = array_column(array_column($request->products, 'product'), 'id');
+            $productsWithQuantities = [];
+            $productIds = array_column(array_column($request->products, 'product'), 'id');
 
-        foreach ($request->products as $product) {
-            $productsWithQuantities[$product['product']['id']] = ['quantity' => $product['quantity']];
-        }
+            foreach ($request->products as $product) {
+                $productsWithQuantities[$product['product']['id']] = ['quantity' => $product['quantity']];
+            }
 
-        $list->products()->attach($productsWithQuantities);
-        Product::whereIn('id', $productIds)->increment('listAdded');
+            $list->products()->attach($productsWithQuantities);
+            Product::whereIn('id', $productIds)->increment('listAdded');
+
+            return $list->load(['products', 'listProducts.product.unity', 'listProducts.product.category']);
+        });
 
         return response([
             'message' => 'Lista criada com sucesso!',
-            'list' => $list->with('products')
+            'list' => new ClientListResource($list)
         ]);
     }
 
     /**
      * Display the specified resource.
      *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @param ItensList $list
+     * @return void
      */
-    public function show(Request $request, int $id)
+    public function show(ItensList $list)
     {
-        $list = ItensList::with([
+        $list->load([
             'listProducts.product.unity',
             'listProducts.product.category',
             'listProducts.companyProduct.company'
-        ])->find($id);
-
-        if (!$list) {
-            return response([
-                'error' => 'List not found',
-                'message' => 'Lista não encontrada'
-            ], 404);
-        }
+        ]);
 
         $l = [
             'id' => $list->id,
@@ -146,12 +144,15 @@ class ListController extends Controller
 
         return response([
             'list' => $l,
-            'optimized' => $list->optimized
+            'optimized' => (bool) $list->optimized
         ]);
     }
 
-    public function optimize(ItensList $list)
+    public function optimize(Request $request, ItensList $list)
     {
+        $this->authorize('update', $list);
+        $list->load('products');
+
         $r = [];
 
         $produtos = CompanyProducts::whereIn('product_id', $list->products->pluck('id'))
@@ -190,18 +191,43 @@ class ListController extends Controller
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
+     * @param  ItensList  $list
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, ItensList $list)
     {
-        $list = ItensList::with('listProducts')->find($id);
-        $list->update($request->all());
+        $list->load('listProducts');
+
+        $validator = Validator::make($request->all(), [
+            'name' => 'sometimes|string',
+            'favorite' => 'sometimes|boolean',
+            'items' => 'sometimes|array',
+            'items.*.product_id' => 'required_with:items|integer|exists:products,id',
+            'items.*.quantity' => 'required_with:items|numeric|min:0.01',
+        ]);
+
+        if ($validator->fails()) {
+            return response([
+                'message' => 'Erro ao tentar atualizar lista',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $list->update($validator->safe()->except('items'));
+
+        $completedProductIds = $list->listProducts()
+            ->where('completed', true)
+            ->pluck('product_id')
+            ->toArray();
 
         $list->listProducts()->where('completed', 0)->delete();
 
-        if ($request->items) {
-            foreach ($request->items as $item) {
+        if ($request->has('items')) {
+            foreach ($validator->validated()['items'] as $item) {
+                if (in_array($item['product_id'], $completedProductIds)) {
+                    continue;
+                }
+
                 $list->listProducts()->create([
                     'product_id' => $item['product_id'],
                     'quantity' => $item['quantity'],
@@ -217,13 +243,11 @@ class ListController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  int  $id
+     * @param  ItensList  $list
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(ItensList $list)
     {
-        $list = ItensList::find($id);
-
         $list->delete();
 
         return response([
