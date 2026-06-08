@@ -98,6 +98,8 @@ class CompanyController extends Controller
     {
         $user = Auth::user();
 
+        $company = $this->companyRepo->find($company->id);
+
         if ($user->type === 'admin') {
             return new AdminCompanyResource($company);
         }
