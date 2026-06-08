@@ -100,9 +100,9 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::post('/events/check-all', [EventController::class, 'checkAll']);
 
     // COMPANIES
+    Route::apiResource('/companies', CompanyController::class);
     Route::get('/companies/{company}/dashboard', [CompanyController::class, 'dashboardData']);
     Route::post('/companies/submit', [CompanyController::class, 'submit']);
-    Route::apiResource('/companies', CompanyController::class);
 
     //COMPANY OWNERS
     Route::post('companies/{company}/request-access', [CompanyOwnersController::class, 'requestAccess']);
