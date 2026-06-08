@@ -3,7 +3,9 @@
 namespace App\Repositories;
 
 use App\Models\Company;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class CompanyRepository
@@ -22,7 +24,17 @@ class CompanyRepository
 
     public function find($id)
     {
-        return $this->company->findOrFail($id);
+        $query = Company::query()
+            ->where('id', $id);
+
+        $user = User::find(Auth::user()->id);
+
+        if (!$user->isAdmin()) {
+            $query->whereNot('status', Company::STATUS_INACTIVE);
+        }
+
+        return $query
+            ->findOrFail($id);
     }
 
     public function create(array $data)
