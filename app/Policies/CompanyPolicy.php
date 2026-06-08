@@ -35,7 +35,7 @@ class CompanyPolicy
         }
 
         if ($user->type === 'company') {
-            return $this->isOwner($user, $company);
+            return $this->isOwner($user, $company) && $company->isActive();
         }
 
         //TO-DO verificar se um cliente vai poder acessar tudo por conta disso, ou sei lá...
@@ -50,7 +50,7 @@ class CompanyPolicy
      */
     public function create(User $user)
     {
-        if ($user->type === 'admin') {
+        if (in_array($user->type, ['admin', 'company'])) {
             return true;
         }
     }
