@@ -9,6 +9,7 @@ use App\Models\CompanyOwners;
 use App\Repositories\CompanyRepository;
 use App\Repositories\EventRepository;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class CompanyOwnersController extends Controller
@@ -43,8 +44,11 @@ class CompanyOwnersController extends Controller
         $perPage = $request->per_page ?? 10;
 
         $companies = $query->with(['owners', 'products'])
-            ->whereHas('owners', function ($query) use ($request) {
-                $query->where('user_id', $request->user()->id);
+            ->when($request->user()->type === 'company', function ($query) use ($request) {
+                $query->whereHas('owners', function ($query) use ($request) {
+                    $query->where('user_id', $request->user()->id)
+                        ->where('company_owners.status', CompanyOwners::STATUS_ACTIVE);
+                });
             })
             ->with(['ownerRelationship' => function ($query) use ($user) {
                 $query->where('user_id', $user->id);
@@ -102,6 +106,12 @@ class CompanyOwnersController extends Controller
      */
     public function storeCompanyAndRequest(Request $request)
     {
+        if ($request->user()->type !== 'company') {
+            return response([
+                'error' => 'Only company users can request access to companies.'
+            ], 403);
+        }
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|string',
             'cnpj' => 'required|string|unique:company,cnpj',
@@ -117,23 +127,25 @@ class CompanyOwnersController extends Controller
         if ($validator->fails()) {
             return response([
                 'errors' => $validator->errors()
-            ], 403);
+            ], 422);
         }
 
-        $company = Company::firstOrCreate([
-            'cnpj' => $request->cnpj
-        ], [
-            ...$request->all(),
-            'status' => 'pending',
-        ]);
+        DB::transaction(function () use ($request) {
+            $company = Company::firstOrCreate([
+                'cnpj' => $request->cnpj
+            ], [
+                ...$request->all(),
+                'status' => Company::STATUS_PENDING,
+            ]);
 
-        CompanyOwners::create([
-            'user_id' => $request->user()->id,
-            'company_id' => $company->id,
-            'status' => 'pending',
-        ]);
+            CompanyOwners::create([
+                'user_id' => $request->user()->id,
+                'company_id' => $company->id,
+                'status' => CompanyOwners::STATUS_PENDING,
+            ]);
 
-        $this->eventRepo->createOwnershipRequestEvent($request->user(), $company);
+            $this->eventRepo->createOwnershipRequestEvent($request->user(), $company);
+        });
 
         return response([
             'message' => 'Empresa cadastrada e solicitação enviada.'
