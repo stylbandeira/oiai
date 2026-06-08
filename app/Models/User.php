@@ -30,6 +30,11 @@ class User extends Authenticatable
         'client',
         'company'
     ];
+
+    const TYPE_ADMIN = 'admin';
+    const TYPE_CLIENT = 'client';
+    const TYPE_COMPANY = 'company';
+
     const ALLOWED_ACTIVITY_TYPE = [
         Event::TYPE_PRODUCT_INSERT
     ];
@@ -181,6 +186,16 @@ class User extends Authenticatable
 
     public function isAdmin(): bool
     {
-        return $this->type === 'admin';
+        return $this->type === self::TYPE_ADMIN;
+    }
+
+    public function isCompany(): bool
+    {
+        return $this->type === self::TYPE_COMPANY;
+    }
+
+    public function isClient(): bool
+    {
+        return $this->type === self::TYPE_CLIENT;
     }
 }
