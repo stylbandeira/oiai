@@ -35,7 +35,7 @@ Route::post('/login', [AuthController::class, 'login']);
 
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::prefix('admin')->group(function () {
-        Route::post('/users/revertDeleted/{id}', [UserController::class, 'revertDestroy']);
+        Route::post('/users/revertDeleted/{user}', [UserController::class, 'revertDestroy'])->withTrashed();
         Route::get('/users/export', [UserController::class, 'export']);
         Route::get('/dashboard', [AdminController::class, 'dashboard']);
 
@@ -44,7 +44,7 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
         Route::get('/products/export', [ProductController::class, 'export']);
         Route::post('/products/bulk-validate', [ProductController::class, 'bulkValidate']);
         Route::apiResource('/products', ProductController::class);
-        Route::apiResource('/users', UserController::class);
+        Route::apiResource('/users', UserController::class)->withTrashed(['show', 'update', 'destroy']);
     });
 
     Route::apiResource('/unities', UnityController::class);
@@ -116,4 +116,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::get('/dashboard-data', [UserController::class, 'dashboardData']);
 
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    Route::get('/users/{user}', [UserController::class, 'show']);
+    Route::put('/users/{user}', [UserController::class, 'update']);
 });
