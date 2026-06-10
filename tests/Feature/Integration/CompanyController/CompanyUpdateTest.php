@@ -12,7 +12,7 @@ class CompanyUpdateTest extends TestCase
     use RefreshDatabase;
 
     /**
-     * @dataProvider <invalidFieldsProvider></invalidFieldsProvider>
+     * @dataProvider invalidFieldsProvider
      */
     public function test_invalid_fields(string $field, mixed $value): void
     {
