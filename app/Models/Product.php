@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Product extends BaseModel
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
     protected $table = 'products';
     const AVERAGE_PRICE_JOB_CONSTANCY_DAYS = 1;
     const AVERAGE_PRICE_PURCHASE_DATE_LIMIT_WEEKS = 4;
@@ -22,7 +23,9 @@ class Product extends BaseModel
         'category_id',
         'ean',
         'description',
-        'validated'
+        'validated',
+        'validated_by',
+        'created_by',
     ];
 
     protected $attributes = [
