@@ -15,10 +15,13 @@ class UpdateUserService
 
     public function execute(User $user, array $data, int $approvedBy): User
     {
+        $companies = $data['companies'] ?? [];
+        unset($data['companies']);
+
         $user->update($data);
 
         if ($user->type === 'company') {
-            $this->companyOwnerService->sync($user, $data['companies'], $approvedBy);
+            $this->companyOwnerService->sync($user, $companies, $approvedBy);
         } else {
             $this->companyOwnerService->detach($user);
         }
