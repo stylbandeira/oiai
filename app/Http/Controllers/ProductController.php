@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\AdminProductResource;
 use App\Http\Resources\ClientProductResource;
+use App\Models\CompanyProducts;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\Unity;
@@ -36,6 +37,17 @@ class ProductController extends Controller
      */
     public function index(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'search' => 'sometimes|string',
+            'validated' => 'sometimes|in:pendentes,validados',
+            'per_page' => 'sometimes|integer|min:1|max:100',
+        ]);
+
+        if ($validator->fails()) {
+            return response([
+                'errors' => $validator->errors()
+            ], 422);
+        }
 
         $perPage = $request->per_page ?? 15;
         $products = $this->productRepo
@@ -61,19 +73,38 @@ class ProductController extends Controller
 
         $validate = Validator::make($request->all(), [
             'name' => 'required|string',
+            'sku' => 'required|string|unique:products,sku',
             'quantity' => 'required|integer',
             'unit_id' => 'required|exists:unities,id',
             'category_id' => 'required|exists:product_category,id',
-            'img' => 'image'
+            'average_price' => 'nullable|numeric',
+            'ean' => 'nullable|string|unique:products,ean',
+            'description' => 'nullable|string',
+            'validated' => 'sometimes|boolean',
+            'img' => 'image',
+            'company_id' => 'sometimes|exists:company,id'
         ]);
 
         if ($validate->fails()) {
             return response([
                 'errors' => $validate->errors()
-            ], 400);
+            ], 422);
         }
 
-        $validatedData = $request->all();
+        $validatedData = $validate->validated();
+        $validatedData['created_by'] = $user->id;
+
+        $company = null;
+
+        if ($user->isCompany() && $request->company_id) {
+            $company = $user->activeCompanies()->find($request->company_id);
+
+            if (!$company) {
+                return response([
+                    'message' => 'Usuário company não possui empresa ativa.'
+                ], 400);
+            }
+        }
 
         if ($request->hasFile('img')) {
             $imgPath = $request->file('img')->store('products/images', 'public');
@@ -86,23 +117,34 @@ class ProductController extends Controller
 
         $product = Product::create($validatedData);
 
+        if ($user->isCompany() && $company) {
+            CompanyProducts::create([
+                'product_id' => $product->id,
+                'company_id' => $company->id,
+                'average_price' => $validatedData['average_price'] ?? null,
+            ]);
+        }
+
+        $product->load(['category', 'unity', 'companies']);
+
         return response([
-            'product' => $product
+            'product' => $user->type === 'admin'
+                ? new AdminProductResource($product)
+                : new ClientProductResource($product)
         ]);
     }
 
     /**
      * Display the specified resource.
      *
-     * @param  int  $id
+     * @param  Product  $product
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show(Product $product)
     {
         $user = Auth::user();
 
-
-        $product = Product::with(['category', 'unity'])->find($id);
+        $product->load(['category', 'unity', 'companies']);
 
         if ($user->type === 'client') {
             return new ClientProductResource($product);
@@ -115,7 +157,7 @@ class ProductController extends Controller
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
+     * @param  Product  $product
      * @return \Illuminate\Http\Response
      */
     public function update(Request $request, Product $product)
@@ -126,21 +168,26 @@ class ProductController extends Controller
             'img' => 'image',
             'unit_id' => 'exists:unities,id',
             'category_id' => 'exists:product_category,id',
+            'quantity' => 'integer',
+            'average_price' => 'nullable|numeric',
+            'ean' => 'nullable|string|unique:products,ean,' . $product->id,
+            'description' => 'nullable|string',
+            'validated' => 'boolean',
         ]);
 
         if ($validator->fails()) {
             return response([
                 'errors' => $validator->errors()
-            ], 400);
+            ], 422);
         }
 
-        if ($request->user()->type === 'client' && $product->validated === true) {
+        if ($request->user()->isClient() && $product->validated) {
             return response([
                 'message' => 'Você não tem permissão para alterar esse produto',
             ], 403);
         }
 
-        $validatedData = $request->all();
+        $validatedData = $validator->validated();
 
         if ($request->hasFile('img')) {
 
@@ -153,9 +200,12 @@ class ProductController extends Controller
         }
 
         $product->update($validatedData);
+        $product->refresh()->load(['category', 'unity', 'companies']);
 
         return response([
-            'product' => $product
+            'product' => $request->user()->type === 'admin'
+                ? new AdminProductResource($product)
+                : new ClientProductResource($product)
         ]);
     }
 
@@ -169,7 +219,7 @@ class ProductController extends Controller
             return response([
                 'message' => 'Arquivo inválido',
                 'errors' => $validator->errors()
-            ]);
+            ], 422);
         }
 
         try {
@@ -337,35 +387,35 @@ class ProductController extends Controller
 
     public function bulkValidate(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'product_ids' => 'required|array',
             'product_ids.*' => 'exists:products,id',
             'validated' => 'required|boolean'
         ]);
 
-        Product::whereIn('id', $request->product_ids)
+        $productsToScore = collect();
+
+        if ($validated['validated']) {
+            $productsToScore = Product::whereIn('id', $validated['product_ids'])
+                ->where('validated', false)
+                ->whereNull('validated_by')
+                ->whereNotNull('created_by')
+                ->get(['id', 'created_by']);
+        }
+
+        Product::whereIn('id', $validated['product_ids'])
             ->update([
-                'validated' => $request->validated,
+                'validated' => $validated['validated'],
                 'validated_by' => $request->user()->id
             ]);
 
-        //Adiciona pontos somente uma vez
-        $created_by_user_ids = Product::whereIn('id', $request->product_ids)
-            ->where('validated_by', null)
-            ->get()
-            ->pluck('created_by')
-            ->filter()
-            ->unique()
-            ->values();
-
-        foreach ($created_by_user_ids as $id) {
-            $this->userRepo->addPoints($id, 3);
+        foreach ($productsToScore as $product) {
+            $this->userRepo->addPoints($product->created_by, 3);
         }
-        //Adiciona pontos somente uma vez
 
         return response([
             'message' => 'Produtos atualizados com sucesso!',
-            'count' => count($request->product_ids)
+            'count' => count($validated['product_ids'])
         ]);
     }
 }
