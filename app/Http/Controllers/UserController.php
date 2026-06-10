@@ -25,10 +25,18 @@ class UserController extends Controller
         private UpdateUserService $updateUserService,
         private StoreUserService $storeUserService,
         private UserRepository $userRepository,
-    ) {}
+    ) {
+        $this->authorizeResource(User::class);
+    }
 
     public function dashboardData(Request $request)
     {
+        if (!$request->user()->isClient()) {
+            return response([
+                'message' => 'Não autorizado'
+            ], 403);
+        }
+
         $user = User::with('recentActivity')->findOrFail(Auth::id());
 
         return response([
@@ -44,16 +52,10 @@ class UserController extends Controller
      */
     public function index(IndexUserRequest $request)
     {
-        if ($request->user()->type !== 'admin') {
-            return response([
-                'message' => 'Não autorizado'
-            ], 403);
-        }
-
         $users = $this->userRepository->paginate(
             $request->validated(),
             [
-                'with_trashed' => $request->user()->type === 'admin'
+                'with_trashed' => $request->user()->isAdmin()
             ]
         );
 
@@ -99,13 +101,17 @@ class UserController extends Controller
         $current_user = Auth::user();
         $user->load(['companies', 'pendingCompanies', 'activeCompanies', 'events']);
 
-        if ($current_user->type === 'admin') {
+        if ($current_user->isAdmin()) {
             return new AdminUserResource($user);
-        } else if ($current_user->type === 'client' && $user->id === $current_user->id) {
+        } else if ($current_user->isClient() && $user->id === $current_user->id) {
             return new ClientUserResource($user);
-        } else if ($current_user->type === 'company') {
+        } else if ($current_user->isCompany() && $user->id === $current_user->id) {
             return new CompanyUserResource($user);
         }
+
+        return response([
+            'message' => 'Não autorizado'
+        ], 403);
     }
 
     /**
@@ -117,6 +123,14 @@ class UserController extends Controller
      */
     public function update(UserUpdateRequest $request, User $user)
     {
+        $current_user = Auth::user();
+
+        if (!$current_user->isAdmin() && $user->id !== $current_user->id) {
+            return response([
+                'message' => 'Não autorizado'
+            ], 403);
+        }
+
         $user = $this->updateUserService->execute(
             $user,
             $request->validated(),
@@ -152,7 +166,7 @@ class UserController extends Controller
         }
 
         if ($user->deleted_at) {
-            $user->deleted_at == null;
+            $user->restore();
 
             return response([
                 'message' => 'Usuário reativado com sucesso!'
@@ -172,10 +186,8 @@ class UserController extends Controller
      * @param User $user
      * @return void
      */
-    public function revertDestroy(Int $id)
+    public function revertDestroy(User $user)
     {
-        $user = User::withTrashed()->find($id);
-
         if (!$user->deleted_at) {
             return response([
                 'message' => 'Usuário não precisa ser reativado.'
@@ -206,18 +218,5 @@ class UserController extends Controller
             $mapper->columns(),
             'usuarios'
         );
-    }
-
-    /**
-     * TODO - Criar sendWelcomeEmail para enviar email de boas vindas para usuários criados
-     * usando um usuário do tipo admin.
-     *
-     * @param User $user
-     * @param String $password
-     * @return void
-     */
-    private function sendWelcomeEmail(User $user, String $password)
-    {
-        return true;
     }
 }
