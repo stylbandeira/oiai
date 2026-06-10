@@ -40,7 +40,7 @@ class ProductRepository
             });
         }
 
-        if ($request->has('validated')) {
+        if ($request->has('validated') && !$user->isClient()) {
             if ($request->validated === 'pendentes') {
                 $query->where('validated', false);
             }
@@ -50,7 +50,7 @@ class ProductRepository
             }
         }
 
-        if ($user->type === 'client') {
+        if ($user->isClient()) {
             $query->where('validated', true)
                 ->with(['userFavorites' => function ($query) use ($user) {
                     $query->where('user_id', $user->id);
