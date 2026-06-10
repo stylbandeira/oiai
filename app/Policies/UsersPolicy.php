@@ -20,20 +20,24 @@ class UsersPolicy
         if ($user->type === 'admin') {
             return true;
         }
+        return false;
     }
 
     /**
      * Determine whether the user can view the model.
      *
      * @param  \App\Models\User  $user
-     * @param  \App\Models\Unity  $unity
+     * @param  \App\Models\User  $affected
      * @return \Illuminate\Auth\Access\Response|bool
      */
     public function view(User $user, User $affected)
     {
-        if ($user->type === 'admin') {
+        if ($user->isAdmin()) {
+            return true;
+        } else if ($user->id === $affected->id) {
             return true;
         }
+        return false;
     }
 
     /**
@@ -72,9 +76,11 @@ class UsersPolicy
      */
     public function delete(User $user, User $affected)
     {
-        if ($user->type === 'admin' && $user->type !== 'admin') {
+        if ($user->isAdmin() && !$affected->isAdmin()) {
             return true;
         }
+
+        return false;
     }
 
     /**
