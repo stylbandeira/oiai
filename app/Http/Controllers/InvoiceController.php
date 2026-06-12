@@ -68,8 +68,8 @@ class InvoiceController extends Controller
         $invoice_data = [];
 
         $request->validate([
-            'qr_code_data' => 'string',
-            'invoice_code' => 'string'
+            'qr_code_data' => 'required_without:invoice_code|string',
+            'invoice_code' => 'required_without:qr_code_data|string'
         ]);
 
         $qrData = $request->input('qr_code_data');
@@ -153,7 +153,8 @@ class InvoiceController extends Controller
 
         return response([
             'success' => true,
-            'message' => 'NFCe processada com sucesso'
+            'message' => 'NFCe processada com sucesso',
+            'invoice' => $invoice
         ]);
     }
 }
