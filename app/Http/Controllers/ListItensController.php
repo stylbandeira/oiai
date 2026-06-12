@@ -13,14 +13,15 @@ class ListItensController extends Controller
     /**
      * Update list itens
      *
-     * @param Int $id
+     * @param ItensList $list
      * @param Request $request
      * @return void
      */
-    public function update(Int $id, Request $request)
+    public function update(Request $request, ItensList $list)
     {
-        $list = ItensList::with('listProducts')
-            ->find($id);
+        $list->load('listProducts');
+
+        $this->authorize('update', $list);
 
         $validator = Validator::make($request->all(), [
             'completed_items' => 'required|array',
@@ -30,25 +31,26 @@ class ListItensController extends Controller
         if ($validator->fails()) {
             return response([
                 'errors' => $validator->errors()
-            ]);
+            ], 422);
         }
 
         try {
-            Log::alert($request->completed_items);
             $list->listProducts()->update([
                 'completed' => false
             ]);
 
-            if (!empty($request->completed_items)) {
+            $completedItems = $validator->validated()['completed_items'];
+
+            if (!empty($completedItems)) {
                 $listItems = ListProducts::where('list_id', $list->id)
-                    ->whereIn('product_id', $request->completed_items);
+                    ->whereIn('product_id', $completedItems);
 
                 $listItems->update(['completed' => true]);
             }
 
             return response([
                 'message' => 'Itens marcados como concluídos com sucesso',
-                'completed_count' => count($request->completed_items)
+                'completed_count' => count($completedItems)
             ]);
         } catch (\Throwable $th) {
             return response([
