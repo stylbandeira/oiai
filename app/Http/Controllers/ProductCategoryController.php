@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\CategoryResource;
 use App\Models\ProductCategory;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 
 class ProductCategoryController extends Controller
 {
@@ -17,8 +16,6 @@ class ProductCategoryController extends Controller
     {
         $categories = ProductCategory::all();
 
-        return response([
-            'categories' => $categories
-        ]);
+        return CategoryResource::collection($categories);
     }
 }
