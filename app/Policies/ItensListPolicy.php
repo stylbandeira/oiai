@@ -54,13 +54,12 @@ class ItensListPolicy
      */
     public function update(User $user, ItensList $itensList)
     {
-        if ($user->type === 'admin') {
+        if ($user->isAdmin()) {
             return true;
         } else if ($user->isClient() && $itensList->user_id === $user->id) {
             return true;
-        } else {
-            return false;
         }
+        return false;
     }
 
     /**
@@ -72,11 +71,12 @@ class ItensListPolicy
      */
     public function delete(User $user, ItensList $itensList)
     {
-        if ($user->type === 'admin') {
+        if ($user->isAdmin()) {
             return true;
-        } else if ($user->type === 'client' && $itensList->user_id === $user->id) {
+        } else if ($user->isClient() && $itensList->user_id === $user->id) {
             return true;
         }
+        return false;
     }
 
     /**
