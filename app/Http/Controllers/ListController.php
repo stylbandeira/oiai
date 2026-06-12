@@ -131,7 +131,7 @@ class ListController extends Controller
             $products_list = $list->listProducts;
 
             foreach ($products_list as $product) {
-                if (!isset($l['companies'][$product->companyProduct->company->id])) {
+                if (!isset($l['companies'][$product->companyProduct->company->id]) || !isset($l['companies'])) {
                     $l['companies'][$product->companyProduct->company->id] = (object) [
                         'company' => new CompanyResource($product->companyProduct->company),
                         'products' => [] // Inicializa array vazio de produtos
