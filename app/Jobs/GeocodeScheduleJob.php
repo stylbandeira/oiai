@@ -79,11 +79,16 @@ class GeocodeScheduleJob implements ShouldQueue
                 ]);
             }
 
-            sleep(1); // respeita o limite do Nominatim público
+            sleep($this->sleepSeconds()); // respeita o limite do Nominatim público
         }
 
         Log::alert([
             'Message' => count($items) . ' endereços cadastrados'
         ]);
+    }
+
+    protected function sleepSeconds(): int
+    {
+        return 1;
     }
 }
