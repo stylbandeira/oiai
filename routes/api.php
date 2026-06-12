@@ -45,10 +45,8 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
         Route::post('/products/bulk-validate', [ProductController::class, 'bulkValidate']);
         Route::apiResource('/products', ProductController::class);
         Route::apiResource('/users', UserController::class)->withTrashed(['show', 'update', 'destroy']);
+        Route::apiResource('/categories', ProductCategoryController::class);
     });
-
-    Route::apiResource('/unities', UnityController::class);
-    Route::apiResource('/categories', ProductCategoryController::class);
 });
 
 
@@ -92,8 +90,14 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::get('/products/{product}', [ProductController::class, 'show']);
     Route::put('/products/{product}', [ProductController::class, 'update']);
     Route::delete('/products/{product}', [ProductController::class, 'destroy']);
+
+    // UNITIES
+    Route::apiResource('/unities', UnityController::class);
     //FAVORITE-PRODUCTS
     Route::post('/products/{product}/favorite', [FavoriteProductsController::class, 'favorite']);
+
+    // CATEGORIES
+    Route::get('/categories', [ProductCategoryController::class, 'index']);
 
     // INVOICES
     Route::post('/invoice/process', [InvoiceController::class, 'processInvoice']);
