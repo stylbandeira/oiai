@@ -59,6 +59,7 @@ class ItensListPolicy
         } else if ($user->isClient() && $itensList->user_id === $user->id) {
             return true;
         }
+
         return false;
     }
 
