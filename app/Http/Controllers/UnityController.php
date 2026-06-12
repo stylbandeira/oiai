@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\UnityResource;
 use App\Models\Unity;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class UnityController extends Controller
 {
@@ -12,13 +14,35 @@ class UnityController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        $unities = Unity::all();
-
-        return response([
-            'unities' => $unities
+        $validator = Validator::make($request->all(), [
+            'search' => 'sometimes|string',
+            'per_page' => 'sometimes|integer|min:1|max:100',
         ]);
+
+        if ($validator->fails()) {
+            return response([
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $query = Unity::query();
+
+        if ($request->filled('search')) {
+            $searchTerm = '%' . $request->search . '%';
+
+            $query->where(function ($query) use ($searchTerm) {
+                $query->where('name', 'like', $searchTerm)
+                    ->orWhere('abbreviation', 'like', $searchTerm);
+            });
+        }
+
+        $unities = $query
+            ->orderBy('name')
+            ->paginate($request->per_page ?? 15);
+
+        return UnityResource::collection($unities);
     }
 
     /**
