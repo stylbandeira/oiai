@@ -17,10 +17,12 @@ use Illuminate\Support\Facades\Validator;
 
 class ListController extends Controller
 {
+
     public function __construct()
     {
         $this->authorizeResource(ItensList::class, 'list');
     }
+
     /**
      * Display a listing of the resource.
      *
@@ -151,7 +153,6 @@ class ListController extends Controller
 
     public function optimize(Request $request, ItensList $list)
     {
-        $this->authorize('update', $list);
         $list->load('products');
 
         $r = [];
