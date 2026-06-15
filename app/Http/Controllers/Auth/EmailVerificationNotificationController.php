@@ -2,24 +2,15 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Actions\Auth\SendEmailVerificationNotificationAction;
 use App\Http\Controllers\Controller;
-use App\Providers\RouteServiceProvider;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class EmailVerificationNotificationController extends Controller
 {
-    /**
-     * Send a new email verification notification.
-     */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, SendEmailVerificationNotificationAction $action): RedirectResponse
     {
-        if ($request->user()->hasVerifiedEmail()) {
-            return redirect()->intended(RouteServiceProvider::HOME);
-        }
-
-        $request->user()->sendEmailVerificationNotification();
-
-        return back()->with('status', 'verification-link-sent');
+        return $action->execute($request);
     }
 }
