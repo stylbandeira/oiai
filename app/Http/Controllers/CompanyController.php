@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use App\Http\Resources\AdminCompanyResource;
 use App\Http\Resources\ClientCompanyResource;
 use App\Http\Resources\CompanyResource;
+use App\Http\Requests\Company\CompanyStoreRequest;
+use App\Http\Requests\Company\CompanyUpdateRequest;
 use App\Models\Company;
 use App\Repositories\CompanyRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Validator;
 
 class CompanyController extends Controller
 {
@@ -54,27 +55,9 @@ class CompanyController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(CompanyStoreRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string',
-            'cnpj' => 'required|string|unique:company,cnpj',
-            'img' => 'image',
-            'website' => 'string',
-            'email' => 'string|email',
-            'status' => 'string',
-            'phone' => 'string',
-            'description' => 'string',
-            'raw_address' => 'string',
-        ]);
-
-        if ($validator->fails()) {
-            return response([
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $validatedData = $request->all();
+        $validatedData = $request->validated();
 
         if ($request->hasFile('img')) {
             $imgPath = $request->file('img')->store('companies/images', 'public');
@@ -139,27 +122,9 @@ class CompanyController extends Controller
      * @param  \App\Models\Company  $company
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Company $company)
+    public function update(CompanyUpdateRequest $request, Company $company)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'string',
-            'cnpj' => 'string|unique:company,cnpj,' . $company->id,
-            'img' => 'image',
-            'website' => 'string',
-            'email' => 'string|email',
-            'status' => 'string',
-            'phone' => 'string',
-            'description' => 'string',
-            'raw_address' => 'string',
-        ]);
-
-        if ($validator->fails()) {
-            return response([
-                'errors' => $validator->errors()
-            ], 400);
-        }
-
-        $validatedData = $request->all();
+        $validatedData = $request->validated();
 
         if ($request->hasFile('img')) {
 
