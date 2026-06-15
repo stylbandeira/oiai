@@ -30,15 +30,14 @@ class CompanyPolicy
      */
     public function view(User $user, Company $company)
     {
-        if ($user->type === 'admin') {
+        if ($user->isAdmin()) {
             return true;
         }
 
-        if ($user->type === 'company') {
+        if ($user->isCompany()) {
             return $this->isOwner($user, $company) && $company->isActive();
         }
 
-        //TO-DO verificar se um cliente vai poder acessar tudo por conta disso, ou sei lá...
         return true;
     }
 
@@ -109,6 +108,8 @@ class CompanyPolicy
 
     protected function isOwner(User $user, Company $company)
     {
-        return $company->owners->contains('id', $user->id);
+        return
+            $company->owners->contains('id', $user->id) &&
+            in_array($company->id, $user->activeCompanies->pluck('id')->toArray());
     }
 }

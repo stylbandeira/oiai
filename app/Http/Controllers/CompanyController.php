@@ -52,8 +52,10 @@ class CompanyController extends Controller
         return $action->execute($company);
     }
 
-    public function dashboardData(Request $request, Company $company, DashboardDataCompanyAction $action)
+    public function dashboardData(Company $company, DashboardDataCompanyAction $action)
     {
+        $this->authorize('view', $company);
+
         return $action->execute($company);
     }
 

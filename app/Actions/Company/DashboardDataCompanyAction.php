@@ -10,14 +10,6 @@ class DashboardDataCompanyAction
 {
     public function execute(Company $company)
     {
-        $user = Auth::user();
-
-        if (!in_array($company->id, $user->activeCompanies->pluck('id')->toArray())) {
-            return response([
-                'error' => "User don't have access to this company",
-            ], 403);
-        }
-
         return response([
             'company' => new CompanyResource($company),
             'totalProducts' => count($company->products) ?? 0,
