@@ -5,7 +5,6 @@ namespace App\Repositories;
 use App\Models\FavoriteProducts;
 use App\Models\Product;
 use App\Models\User;
-use Illuminate\Support\Facades\Auth;
 
 class FavoriteProductsRepository
 {
@@ -26,9 +25,21 @@ class FavoriteProductsRepository
         return $this->model->findOrFail($id);
     }
 
-    public function create(array $data)
+    public function findUserProductFavorite(User $user, Product $product)
     {
-        return $this->model->create($data);
+        return $this->model
+            ->where('user_id', $user->id)
+            ->where('product_id', $product->id)
+            ->first();
+    }
+
+    public function create(User $user, Product $product, array $data = [])
+    {
+        return $this->model->create([
+            'user_id' => $user->id,
+            'product_id' => $product->id,
+            ...$data
+        ]);
     }
 
     public function update($id, array $data)
