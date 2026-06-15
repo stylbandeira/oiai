@@ -25,12 +25,12 @@ class CompanyOwnerRepository
         return $this->companyOwner->findOrFail($id);
     }
 
-    public function create(Company $company, User $user)
+    public function create(Company $company, User $user, string $status = CompanyOwners::STATUS_PENDING)
     {
         return $this->companyOwner->create([
             'user_id' => $user->id,
             'company_id' => $company->id,
-            'status' => CompanyOwners::STATUS_PENDING,
+            'status' => $status,
         ]);
     }
 
