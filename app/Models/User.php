@@ -53,7 +53,8 @@ class User extends Authenticatable
 
     protected $attributes = [
         'cpf' => null,
-        'must_change_password' => true
+        'must_change_password' => true,
+        'type' => 'client',
     ];
 
     /**
