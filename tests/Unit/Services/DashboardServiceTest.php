@@ -21,7 +21,7 @@ class DashboardServiceTest extends TestCase
         Company::factory()->count(3)->create();
         Product::factory()->count(4)->create();
 
-        $stats = (new DashboardService())->getSystemStats();
+        $stats = app(DashboardService::class)->getSystemStats();
 
         $this->assertSame(2, $stats['totalUsers']);
         $this->assertSame(3, $stats['totalCompanies']);
@@ -35,7 +35,7 @@ class DashboardServiceTest extends TestCase
         User::factory()->create(['name' => 'High', 'points' => 10]);
         User::factory()->create(['name' => 'Mid', 'points' => 5]);
 
-        $users = (new DashboardService())->getTopUsers(2);
+        $users = app(DashboardService::class)->getTopUsers(2);
 
         $this->assertCount(2, $users);
         $this->assertSame('High', $users[0]->name);
@@ -44,7 +44,7 @@ class DashboardServiceTest extends TestCase
 
     public function test_get_top_mentioned_stores_returns_empty_array(): void
     {
-        $this->assertSame([], (new DashboardService())->getTopMentionedStores());
+        $this->assertSame([], app(DashboardService::class)->getTopMentionedStores());
     }
 
     public function test_get_top_mentioned_products_returns_registration_counts(): void
@@ -77,7 +77,7 @@ class DashboardServiceTest extends TestCase
             ]);
         });
 
-        $products = (new DashboardService())->getTopMentionedProducts();
+        $products = app(DashboardService::class)->getTopMentionedProducts();
 
         $this->assertSame([
             [

@@ -116,4 +116,11 @@ class UserRepository
 
         return $query;
     }
+
+    public function getTopUsers(int $limit = 3)
+    {
+        return User::orderBy('points', 'desc')
+            ->take($limit)
+            ->get(['id', 'name', 'points', 'reputation']);
+    }
 }
