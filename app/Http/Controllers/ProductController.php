@@ -4,6 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\AdminProductResource;
 use App\Http\Resources\ClientProductResource;
+use App\Http\Requests\Product\ProductBulkValidateRequest;
+use App\Http\Requests\Product\ProductExportRequest;
+use App\Http\Requests\Product\ProductImportRequest;
+use App\Http\Requests\Product\ProductIndexRequest;
+use App\Http\Requests\Product\ProductStoreRequest;
+use App\Http\Requests\Product\ProductUpdateRequest;
 use App\Models\CompanyProducts;
 use App\Models\Product;
 use App\Models\ProductCategory;
@@ -17,7 +23,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
 {
@@ -35,20 +40,8 @@ class ProductController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(Request $request)
+    public function index(ProductIndexRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'search' => 'sometimes|string',
-            'validated' => 'sometimes|in:pendentes,validados',
-            'per_page' => 'sometimes|integer|min:1|max:100',
-        ]);
-
-        if ($validator->fails()) {
-            return response([
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
         $perPage = $request->per_page ?? 15;
         $products = $this->productRepo
             ->list($request->user(), $request, ['category', 'unity', 'companies'])
@@ -67,31 +60,11 @@ class ProductController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(ProductStoreRequest $request)
     {
         $user = $request->user();
 
-        $validate = Validator::make($request->all(), [
-            'name' => 'required|string',
-            'sku' => 'required|string|unique:products,sku',
-            'quantity' => 'required|integer',
-            'unit_id' => 'required|exists:unities,id',
-            'category_id' => 'required|exists:product_category,id',
-            'average_price' => 'nullable|numeric',
-            'ean' => 'nullable|string|unique:products,ean',
-            'description' => 'nullable|string',
-            'validated' => 'sometimes|boolean',
-            'img' => 'image',
-            'company_id' => 'sometimes|exists:company,id'
-        ]);
-
-        if ($validate->fails()) {
-            return response([
-                'errors' => $validate->errors()
-            ], 422);
-        }
-
-        $validatedData = $validate->validated();
+        $validatedData = $request->validated();
         $validatedData['created_by'] = $user->id;
 
         $company = null;
@@ -160,34 +133,15 @@ class ProductController extends Controller
      * @param  Product  $product
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Product $product)
+    public function update(ProductUpdateRequest $request, Product $product)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'string',
-            'sku' => 'string|unique:products,sku,' . $product->id,
-            'img' => 'image',
-            'unit_id' => 'exists:unities,id',
-            'category_id' => 'exists:product_category,id',
-            'quantity' => 'integer',
-            'average_price' => 'nullable|numeric',
-            'ean' => 'nullable|string|unique:products,ean,' . $product->id,
-            'description' => 'nullable|string',
-            'validated' => 'boolean',
-        ]);
-
-        if ($validator->fails()) {
-            return response([
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
         if ($request->user()->isClient() && $product->validated) {
             return response([
                 'message' => 'Você não tem permissão para alterar esse produto',
             ], 403);
         }
 
-        $validatedData = $validator->validated();
+        $validatedData = $request->validated();
 
         if ($request->hasFile('img')) {
 
@@ -209,19 +163,8 @@ class ProductController extends Controller
         ]);
     }
 
-    public function import(Request $request)
+    public function import(ProductImportRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'file' => 'required|file|mimes:csv,txt,xlsx|max:10240'
-        ]);
-
-        if ($validator->fails()) {
-            return response([
-                'message' => 'Arquivo inválido',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
         try {
             $file = $request->file('file');
             $filePath = $file->store('temp-csv');
@@ -340,7 +283,7 @@ class ProductController extends Controller
      * @param ExportService $exportService
      * @return void
      */
-    public function export(Request $request, ExportService $exportService)
+    public function export(ProductExportRequest $request, ExportService $exportService)
     {
         $query = Product::with(['category', 'unity']);
 
@@ -385,13 +328,9 @@ class ProductController extends Controller
         ]);
     }
 
-    public function bulkValidate(Request $request)
+    public function bulkValidate(ProductBulkValidateRequest $request)
     {
-        $validated = $request->validate([
-            'product_ids' => 'required|array',
-            'product_ids.*' => 'exists:products,id',
-            'validated' => 'required|boolean'
-        ]);
+        $validated = $request->validated();
 
         $productsToScore = collect();
 
