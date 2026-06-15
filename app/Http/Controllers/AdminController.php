@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Admin\DashboardAdminAction;
 use App\Services\DashboardService;
 use Illuminate\Http\Request;
 
@@ -12,14 +13,9 @@ class AdminController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function dashboard(DashboardService $dashboardService)
+    public function dashboard(DashboardService $dashboardService, DashboardAdminAction $action)
     {
-        return response([
-            'systemStats' => $dashboardService->getSystemStats(),
-            'topUsers' => $dashboardService->getTopUsers(),
-            'topStores' => $dashboardService->getTopMentionedStores(),
-            'topProducts' => $dashboardService->getTopMentionedProducts(),
-        ]);
+        return $action->execute($dashboardService);
     }
 
     /**
