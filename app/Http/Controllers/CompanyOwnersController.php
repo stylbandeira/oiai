@@ -4,13 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\AdminCompanyResource;
 use App\Http\Resources\CompanyResource;
+use App\Http\Requests\CompanyOwners\StoreCompanyAndRequestRequest;
 use App\Models\Company;
 use App\Models\CompanyOwners;
 use App\Repositories\CompanyRepository;
 use App\Repositories\EventRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
 
 class CompanyOwnersController extends Controller
 {
@@ -104,7 +104,7 @@ class CompanyOwnersController extends Controller
      * @param Request $request
      * @return void
      */
-    public function storeCompanyAndRequest(Request $request)
+    public function storeCompanyAndRequest(StoreCompanyAndRequestRequest $request)
     {
         if ($request->user()->type !== 'company') {
             return response([
@@ -112,29 +112,11 @@ class CompanyOwnersController extends Controller
             ], 403);
         }
 
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string',
-            'cnpj' => 'required|string|unique:company,cnpj',
-            'img' => 'image',
-            'website' => 'string',
-            'email' => 'string|email',
-            'status' => 'string',
-            'phone' => 'string',
-            'description' => 'string',
-            'raw_address' => 'string',
-        ]);
-
-        if ($validator->fails()) {
-            return response([
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
         DB::transaction(function () use ($request) {
             $company = Company::firstOrCreate([
                 'cnpj' => $request->cnpj
             ], [
-                ...$request->all(),
+                ...$request->validated(),
                 'status' => Company::STATUS_PENDING,
             ]);
 
