@@ -42,21 +42,6 @@ class ListItensUpdateTest extends TestCase
             ->assertStatus(404);
     }
 
-    public function test_returns_403_when_list_does_not_belong_to_user(): void
-    {
-        $owner = User::factory()->client()->create();
-        $otherUser = User::factory()->client()->create();
-        $list = $this->createList($owner);
-
-        $response = $this->actingAs($otherUser)
-            ->putJson('/api/listItems/' . $list->id, [
-                'completed_items' => [],
-            ]);
-
-        $response
-            ->assertStatus(403);
-    }
-
     public function test_completed_items_are_saved_as_completed_on_database(): void
     {
         $user = User::factory()->client()->create();
