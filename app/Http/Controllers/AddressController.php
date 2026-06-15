@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Address\StoreAddressAction;
 use App\Http\Requests\Address\AddressStoreRequest;
 use App\Models\Address;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
 
 class AddressController extends Controller
 {
@@ -40,13 +39,9 @@ class AddressController extends Controller
      * @param AddressStoreRequest $request
      * @return void
      */
-    public function store(AddressStoreRequest $request)
+    public function store(AddressStoreRequest $request, StoreAddressAction $action)
     {
-        $address = Address::create($request->validated());
-
-        return response([
-            'address' => $address
-        ]);
+        return $action->execute($request);
     }
 
     /**
