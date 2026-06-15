@@ -2,24 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\AdminCompanyResource;
-use App\Http\Resources\ClientCompanyResource;
-use App\Http\Resources\CompanyResource;
+use App\Actions\Company\DashboardDataCompanyAction;
+use App\Actions\Company\DestroyCompanyAction;
+use App\Actions\Company\IndexCompanyAction;
+use App\Actions\Company\ShowCompanyAction;
+use App\Actions\Company\StoreCompanyAction;
+use App\Actions\Company\UpdateCompanyAction;
 use App\Http\Requests\Company\CompanyStoreRequest;
 use App\Http\Requests\Company\CompanyUpdateRequest;
 use App\Models\Company;
-use App\Repositories\CompanyRepository;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 
 class CompanyController extends Controller
 {
-    protected CompanyRepository $companyRepo;
-
-    public function __construct(CompanyRepository $companyRepo)
+    public function __construct()
     {
-        $this->companyRepo = $companyRepo;
         $this->authorizeResource(Company::class, 'company');
     }
 
@@ -28,25 +25,9 @@ class CompanyController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(Request $request)
+    public function index(Request $request, IndexCompanyAction $action)
     {
-        $query = $this->companyRepo->list($request);
-
-        $perPage = $request->per_page ?? 10;
-
-        $companies = $query->with(['owners', 'products'])
-            ->withCount('products')
-            ->paginate($perPage);
-
-        if ($request->user()->type === 'admin') {
-            return AdminCompanyResource::collection($companies);
-        }
-
-        if ($request->user()->type === 'company') {
-            return CompanyResource::collection($companies);
-        }
-
-        return ClientCompanyResource::collection($companies);
+        return $action->execute($request);
     }
 
     /**
@@ -55,20 +36,9 @@ class CompanyController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(CompanyStoreRequest $request)
+    public function store(CompanyStoreRequest $request, StoreCompanyAction $action)
     {
-        $validatedData = $request->validated();
-
-        if ($request->hasFile('img')) {
-            $imgPath = $request->file('img')->store('companies/images', 'public');
-            $validatedData['img'] = $imgPath;
-        }
-
-        $company = Company::create($validatedData);
-
-        return response([
-            'company' => $company
-        ]);
+        return $action->execute($request);
     }
 
     /**
@@ -77,42 +47,14 @@ class CompanyController extends Controller
      * @param  \App\Models\Company  $company
      * @return \Illuminate\Http\Response
      */
-    public function show(Company $company)
+    public function show(Company $company, ShowCompanyAction $action)
     {
-        $user = Auth::user();
-
-        $company = $this->companyRepo->find($company->id);
-
-        if ($user->type === 'admin') {
-            return new AdminCompanyResource($company);
-        }
-
-        if ($user->type === 'company') {
-            $company->load(['products']);
-            return new CompanyResource($company);
-        }
-
-        return new ClientCompanyResource($company);
+        return $action->execute($company);
     }
 
-    public function dashboardData(Request $request, Company $company)
+    public function dashboardData(Request $request, Company $company, DashboardDataCompanyAction $action)
     {
-        $user = Auth::user();
-
-        if (!in_array($company->id, $user->activeCompanies->pluck('id')->toArray())) {
-            return response([
-                'error' => "User don't have access to this company"
-            ], 403);
-        }
-
-        // TODO - ATUALIZAR DADOS
-        return response([
-            'company' => new CompanyResource($company),
-            'totalProducts' => count($company->products) ?? 0,
-            'activeWebhooks' => 0,
-            'monthlyUpdates' => 0,
-            'userEngagement' => 0
-        ]);
+        return $action->execute($company);
     }
 
     /**
@@ -122,25 +64,9 @@ class CompanyController extends Controller
      * @param  \App\Models\Company  $company
      * @return \Illuminate\Http\Response
      */
-    public function update(CompanyUpdateRequest $request, Company $company)
+    public function update(CompanyUpdateRequest $request, Company $company, UpdateCompanyAction $action)
     {
-        $validatedData = $request->validated();
-
-        if ($request->hasFile('img')) {
-
-            if ($company->img && Storage::disk('public')->exists($company->img)) {
-                Storage::disk('public')->delete($company->img);
-            }
-
-            $imgPath = $request->file('img')->store('companies/images', 'public');
-            $validatedData['img'] = $imgPath;
-        }
-
-        $company->update($validatedData);
-
-        return response([
-            'company' => $company
-        ]);
+        return $action->execute($request, $company);
     }
 
     /**
@@ -149,12 +75,8 @@ class CompanyController extends Controller
      * @param  \App\Models\Company  $company
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Company $company)
+    public function destroy(Company $company, DestroyCompanyAction $action)
     {
-        $company->delete();
-
-        return response([
-            'message' => 'Empresa deletada com sucesso!'
-        ]);
+        return $action->execute($company);
     }
 }
