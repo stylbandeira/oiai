@@ -3,18 +3,17 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\ApiLoginRequest;
+use App\Http\Requests\Auth\ApiRegisterRequest;
 use App\Http\Resources\AdminUserResource;
 use App\Http\Resources\ClientUserResource;
 use App\Http\Resources\CompanyUserResource;
-use App\Models\Event;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
 {
@@ -46,19 +45,15 @@ class AuthController extends Controller
         ]);
     }
 
-    public function login(Request $request)
+    public function login(ApiLoginRequest $request)
     {
-        $request->validate([
-            'email' => 'required|string|exists:users,email',
-            'password' => 'required|string',
-            'user_type' => 'required|string'
-        ]);
+        $validated = $request->validated();
 
-        $user = User::where('email', $request->email)
-            ->where('type', $request->user_type)
+        $user = User::where('email', $validated['email'])
+            ->where('type', $validated['user_type'])
             ->first();
 
-        if (!Hash::check($request->password, $user->password)) {
+        if (!Hash::check($validated['password'], $user->password)) {
             return response()->json([
                 'message' => 'Credenciais inválidas'
             ], 401);
@@ -115,27 +110,16 @@ class AuthController extends Controller
      * @param Request $request
      * @return void
      */
-    public function register(Request $request)
+    public function register(ApiRegisterRequest $request)
     {
-        $validation = Validator::make($request->all(), [
-            'email' => 'required|email|unique:users,email',
-            'name' => 'required|string',
-            'password' => ['required', 'confirmed', Password::min(8)],
-            'user_type' => 'required|string',
-        ]);
+        $validated = $request->validated();
 
-        if ($validation->fails()) {
-            return response([
-                'errors' => $validation->errors()
-            ], 300);
-        }
-
-        $hashedPassword = Hash::make($request->password);
+        $hashedPassword = Hash::make($validated['password']);
 
         $user = User::create([
-            'type' => $request->user_type,
-            'name' => $request->name,
-            'email' => $request->email,
+            'type' => $validated['user_type'],
+            'name' => $validated['name'],
+            'email' => $validated['email'],
             'password' => $hashedPassword,
         ]);
 
