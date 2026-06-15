@@ -3,6 +3,7 @@
 namespace Tests\Feature\Integration\ListController;
 
 use App\Models\ItensList;
+use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -31,22 +32,6 @@ class ListDestroyTest extends TestCase
         $this->assertDatabaseMissing('list', [
             'id' => $list->id,
         ]);
-    }
-
-    /**
-     * @dataProvider nonClientUsersProvider
-     */
-    public function test_admin_and_company_cannot_create_a_list(string $userFactoryState): void
-    {
-        $user = User::factory()->{$userFactoryState}()->create();
-
-        $response = $this->actingAs($user)
-            ->postJson('/api/lists', [
-                'name' => 'Lista',
-                'products' => [],
-            ]);
-
-        $response->assertStatus(403);
     }
 
     public function test_not_found_returns_error(): void

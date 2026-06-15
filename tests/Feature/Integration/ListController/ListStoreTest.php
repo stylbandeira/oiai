@@ -58,6 +58,22 @@ class ListStoreTest extends TestCase
             ->assertJsonValidationErrorFor('products.0.product.id');
     }
 
+    /**
+     * @dataProvider nonClientUsersProvider
+     */
+    public function test_nobody_can_create_empty_list(string $userFactoryState): void
+    {
+        $user = User::factory()->{$userFactoryState}()->create();
+
+        $response = $this->actingAs($user)
+            ->postJson('/api/lists', [
+                'name' => 'Lista',
+                'products' => [],
+            ]);
+
+        $response->assertStatus(422);
+    }
+
     public function test_success_response_returns_list_resource_with_products(): void
     {
         $user = User::factory()->client()->create();

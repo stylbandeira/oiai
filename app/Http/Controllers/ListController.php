@@ -6,6 +6,8 @@ use App\Http\Resources\ClientListResource;
 use App\Http\Resources\ClientProductResource;
 use App\Http\Resources\CompanyResource;
 use App\Http\Resources\ListProductResource;
+use App\Http\Requests\List\ListStoreRequest;
+use App\Http\Requests\List\ListUpdateRequest;
 use App\Models\CompanyProducts;
 use App\Models\ItensList;
 use App\Models\ListProducts;
@@ -13,7 +15,6 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
 
 class ListController extends Controller
 {
@@ -48,7 +49,7 @@ class ListController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(ListStoreRequest $request)
     {
         $user = Auth::user();
 
@@ -56,20 +57,6 @@ class ListController extends Controller
             return response([
                 'message' => 'Apenas clientes podem criar listas.'
             ], 403);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string',
-            'products' => 'required|array|min:1',
-            'products.*.product.id' => 'required|integer|exists:products,id',
-            'products.*.quantity' => 'required|numeric|min:0.01',
-        ]);
-
-        if ($validator->fails()) {
-            return response([
-                'message' => 'Erro ao tentar criar lista',
-                'errors' => $validator->errors()
-            ], 422);
         }
 
         $list = DB::transaction(function () use ($request, $user) {
@@ -196,26 +183,10 @@ class ListController extends Controller
      * @param  ItensList  $list
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, ItensList $list)
+    public function update(ListUpdateRequest $request, ItensList $list)
     {
         $list->load('listProducts');
-
-        $validator = Validator::make($request->all(), [
-            'name' => 'sometimes|string',
-            'favorite' => 'sometimes|boolean',
-            'items' => 'sometimes|array',
-            'items.*.product_id' => 'required_with:items|integer|exists:products,id',
-            'items.*.quantity' => 'required_with:items|numeric|min:0.01',
-        ]);
-
-        if ($validator->fails()) {
-            return response([
-                'message' => 'Erro ao tentar atualizar lista',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $list->update($validator->safe()->except('items'));
+        $list->update($request->safe()->except('items'));
 
         $completedProductIds = $list->listProducts()
             ->where('completed', true)
@@ -225,7 +196,7 @@ class ListController extends Controller
         $list->listProducts()->where('completed', 0)->delete();
 
         if ($request->has('items')) {
-            foreach ($validator->validated()['items'] as $item) {
+            foreach ($request->validated()['items'] as $item) {
                 if (in_array($item['product_id'], $completedProductIds)) {
                     continue;
                 }
