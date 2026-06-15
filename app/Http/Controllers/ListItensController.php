@@ -21,8 +21,6 @@ class ListItensController extends Controller
     {
         $list->load('listProducts');
 
-        $this->authorize('update', $list);
-
         $validator = Validator::make($request->all(), [
             'completed_items' => 'required|array',
             'completed_items.*' => 'integer|exists:products,id'
