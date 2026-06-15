@@ -17,7 +17,7 @@ class CompanyOwnersStoreCompanyAndRequestTest extends TestCase
     /**
      * @dataProvider forbiddenUsersProvider
      */
-    public function test_only_company_users_can_store_company_and_request_access(string $userFactoryState): void
+    public function test_only_company_and_admin_users_can_store_company_and_request_access(string $userFactoryState): void
     {
         $user = User::factory()->{$userFactoryState}()->create();
 
@@ -25,10 +25,7 @@ class CompanyOwnersStoreCompanyAndRequestTest extends TestCase
             ->postJson('/api/companies/request-with-new-company', $this->validPayload());
 
         $response
-            ->assertStatus(403)
-            ->assertJsonFragment([
-                'error' => 'Only company users can request access to companies.',
-            ]);
+            ->assertStatus(403);
     }
 
     /**
@@ -115,7 +112,6 @@ class CompanyOwnersStoreCompanyAndRequestTest extends TestCase
     {
         return [
             ['client'],
-            ['admin'],
         ];
     }
 

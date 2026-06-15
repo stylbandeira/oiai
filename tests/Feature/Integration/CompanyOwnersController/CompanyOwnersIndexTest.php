@@ -20,10 +20,7 @@ class CompanyOwnersIndexTest extends TestCase
             ->getJson('/api/user/company-requests');
 
         $response
-            ->assertStatus(403)
-            ->assertJsonFragment([
-                'error' => 'Não permitido para clientes comuns.',
-            ]);
+            ->assertStatus(403);
     }
 
     public function test_company_user_sees_only_its_active_companies(): void

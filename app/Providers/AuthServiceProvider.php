@@ -6,9 +6,11 @@ namespace App\Providers;
 
 use App\Models\Address;
 use App\Models\Company;
+use App\Models\CompanyOwners;
 use App\Models\ItensList;
 use App\Models\User;
 use App\Policies\AddressPolicy;
+use App\Policies\CompanyOwnersPolicy;
 use App\Policies\CompanyPolicy;
 use App\Policies\ItensListPolicy;
 use App\Policies\UsersPolicy;
@@ -25,7 +27,8 @@ class AuthServiceProvider extends ServiceProvider
         Address::class => AddressPolicy::class,
         User::class => UsersPolicy::class,
         ItensList::class => ItensListPolicy::class,
-        Company::class => CompanyPolicy::class
+        Company::class => CompanyPolicy::class,
+        CompanyOwners::class => CompanyOwnersPolicy::class,
     ];
 
     /**

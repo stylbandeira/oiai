@@ -42,6 +42,19 @@ class CompanyRepository
         return $this->company->create($data);
     }
 
+    public function firstOrCreateByCnpj(array $data): Company
+    {
+        return Company::firstOrCreate(
+            [
+                'cnpj' => $data['cnpj'],
+            ],
+            [
+                ...$data,
+                'status' => Company::STATUS_PENDING,
+            ]
+        );
+    }
+
     public function update($id, array $data)
     {
         $record = $this->find($id);
@@ -82,5 +95,18 @@ class CompanyRepository
         }
 
         return $query;
+    }
+
+    public function paginateForUser(User $user, int $perPage = 10)
+    {
+        return Company::query()
+            ->with(['owners', 'products'])
+            ->when(
+                $user->isCompany(),
+                fn($query) => $query->ownedByActiveUser($user)
+            )
+            ->withOwnerRelationshipFor($user)
+            ->withCount('products')
+            ->paginate($perPage ?? 10);
     }
 }

@@ -35,7 +35,8 @@ class CompanyPolicy
         }
 
         if ($user->isCompany()) {
-            return $this->isOwner($user, $company) && $company->isActive();
+            return $user->ownsActiveCompany($company)
+                && $company->isActive();
         }
 
         return true;
@@ -104,12 +105,5 @@ class CompanyPolicy
     public function forceDelete(User $user, Company $company)
     {
         //
-    }
-
-    protected function isOwner(User $user, Company $company)
-    {
-        return
-            $company->owners->contains('id', $user->id) &&
-            in_array($company->id, $user->activeCompanies->pluck('id')->toArray());
     }
 }

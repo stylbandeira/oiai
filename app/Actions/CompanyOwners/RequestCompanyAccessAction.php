@@ -4,28 +4,21 @@ namespace App\Actions\CompanyOwners;
 
 use App\Models\Company;
 use App\Models\CompanyOwners;
+use App\Repositories\CompanyOwnerRepository;
 use App\Repositories\EventRepository;
 use Illuminate\Http\Request;
 
 class RequestCompanyAccessAction
 {
-    public function __construct(private EventRepository $eventRepo)
-    {
-    }
+    public function __construct(
+        private EventRepository $eventRepo,
+        private CompanyOwnerRepository $companyOwnerRepository
+    ) {}
 
     public function execute(Request $request, Company $company)
     {
-        if ($request->user()->type !== 'company') {
-            return response([
-                'error' => 'Only company users can request access to companies.',
-            ], 403);
-        }
-
         try {
-            CompanyOwners::create([
-                'user_id' => $request->user()->id,
-                'company_id' => $company->id,
-            ]);
+            $this->companyOwnerRepository->create($company, $request->user());
         } catch (\Throwable $th) {
             return response([
                 'error' => 'Não é possível solicitar novamente atribuição à mesma empresa.',

@@ -100,6 +100,13 @@ class User extends Authenticatable
             ->wherePivot('status', 'active');
     }
 
+    public function ownsActiveCompany(Company $company): bool
+    {
+        return $this->activeCompanies()
+            ->whereKey($company->id)
+            ->exists();
+    }
+
     public function pendingCompanies()
     {
         return $this->belongsToMany(Company::class, 'company_owners', 'user_id', 'company_id')
