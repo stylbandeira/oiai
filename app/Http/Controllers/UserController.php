@@ -2,46 +2,32 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\User\DashboardDataUserAction;
+use App\Actions\User\DestroyUserAction;
+use App\Actions\User\ExportUserAction;
+use App\Actions\User\IndexUserAction;
+use App\Actions\User\RevertDestroyUserAction;
+use App\Actions\User\ShowUserAction;
+use App\Actions\User\StoreUserAction;
+use App\Actions\User\UpdateUserAction;
 use App\Exports\Mappers\UserExportMapper;
 use App\Http\Requests\User\IndexUserRequest;
 use App\Http\Requests\User\UserStoreRequest;
 use App\Http\Requests\User\UserUpdateRequest;
-use App\Http\Resources\AdminUserResource;
-use App\Http\Resources\ClientDashboardResource;
-use App\Http\Resources\ClientUserResource;
-use App\Http\Resources\CompanyUserResource;
 use App\Models\User;
-use App\Repositories\UserRepository;
 use App\Services\ExportService;
-use App\Services\User\StoreUserService;
-use App\Services\User\UpdateUserService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
-    public function __construct(
-        private UpdateUserService $updateUserService,
-        private StoreUserService $storeUserService,
-        private UserRepository $userRepository,
-    ) {
+    public function __construct()
+    {
         $this->authorizeResource(User::class);
     }
 
-    public function dashboardData(Request $request)
+    public function dashboardData(Request $request, DashboardDataUserAction $action)
     {
-        if (!$request->user()->isClient()) {
-            return response([
-                'message' => 'Não autorizado'
-            ], 403);
-        }
-
-        $user = User::with('recentActivity')->findOrFail(Auth::id());
-
-        return response([
-            'dashboardData' => new ClientDashboardResource($user)
-        ]);
+        return $action->execute($request);
     }
 
     /**
@@ -50,16 +36,9 @@ class UserController extends Controller
      * @param IndexUserRequest $request
      * @return void
      */
-    public function index(IndexUserRequest $request)
+    public function index(IndexUserRequest $request, IndexUserAction $action)
     {
-        $users = $this->userRepository->paginate(
-            $request->validated(),
-            [
-                'with_trashed' => $request->user()->isAdmin()
-            ]
-        );
-
-        return AdminUserResource::collection($users);
+        return $action->execute($request);
     }
 
     /**
@@ -67,27 +46,9 @@ class UserController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function store(UserStoreRequest $request)
+    public function store(UserStoreRequest $request, StoreUserAction $action)
     {
-        try {
-            $user = $this->storeUserService->execute(
-                $request->validated(),
-                Auth::id()
-            );
-
-            return response([
-                'message' => 'Usuário criado com sucesso!',
-                'user' => $user
-            ]);
-        } catch (\Throwable $th) {
-            Log::error('Erro ao criar usuário', [
-                'error' => $th->getMessage()
-            ]);
-
-            return response([
-                'error' => $th->getMessage()
-            ]);
-        }
+        return $action->execute($request);
     }
 
     /**
@@ -96,22 +57,9 @@ class UserController extends Controller
      * @param  User  $user
      * @return \Illuminate\Http\Response
      */
-    public function show(User $user)
+    public function show(User $user, ShowUserAction $action)
     {
-        $current_user = Auth::user();
-        $user->load(['companies', 'pendingCompanies', 'activeCompanies', 'events']);
-
-        if ($current_user->isAdmin()) {
-            return new AdminUserResource($user);
-        } else if ($current_user->isClient() && $user->id === $current_user->id) {
-            return new ClientUserResource($user);
-        } else if ($current_user->isCompany() && $user->id === $current_user->id) {
-            return new CompanyUserResource($user);
-        }
-
-        return response([
-            'message' => 'Não autorizado'
-        ], 403);
+        return $action->execute($user);
     }
 
     /**
@@ -121,26 +69,9 @@ class UserController extends Controller
      * @param User $user
      * @return void
      */
-    public function update(UserUpdateRequest $request, User $user)
+    public function update(UserUpdateRequest $request, User $user, UpdateUserAction $action)
     {
-        $current_user = Auth::user();
-
-        if (!$current_user->isAdmin() && $user->id !== $current_user->id) {
-            return response([
-                'message' => 'Não autorizado'
-            ], 403);
-        }
-
-        $user = $this->updateUserService->execute(
-            $user,
-            $request->validated(),
-            Auth::id()
-        );
-
-        return response([
-            'message' => 'Usuário editado com sucesso!',
-            'user' => new AdminUserResource($user),
-        ]);
+        return $action->execute($request, $user);
     }
 
     /**
@@ -149,35 +80,9 @@ class UserController extends Controller
      * @param User $user
      * @return void
      */
-    public function destroy(User $user)
+    public function destroy(User $user, DestroyUserAction $action)
     {
-        $user->load('companies');
-
-        if (count($user->companies)) {
-            return response([
-                'message' => 'Apague a relação entre usuário e empresa primeiro.'
-            ], 400);
-        }
-
-        if ($user->type === 'admin') {
-            return response([
-                'message' => 'Infelizmente não é possível deletar usuários do tipo admin.'
-            ], 400);
-        }
-
-        if ($user->deleted_at) {
-            $user->restore();
-
-            return response([
-                'message' => 'Usuário reativado com sucesso!'
-            ]);
-        } else {
-            $user->delete();
-
-            return response([
-                'message' => 'Usuário excluído com sucesso!'
-            ]);
-        }
+        return $action->execute($user);
     }
 
     /**
@@ -186,20 +91,9 @@ class UserController extends Controller
      * @param User $user
      * @return void
      */
-    public function revertDestroy(User $user)
+    public function revertDestroy(User $user, RevertDestroyUserAction $action)
     {
-        if (!$user->deleted_at) {
-            return response([
-                'message' => 'Usuário não precisa ser reativado.'
-            ], 400);
-        }
-
-        $user->restore();
-
-        return response([
-            'message' => 'Usuário revertido',
-            'user' => new AdminUserResource($user)
-        ]);
+        return $action->execute($user);
     }
 
     /**
@@ -208,15 +102,10 @@ class UserController extends Controller
     public function export(
         IndexUserRequest $request,
         ExportService $exportService,
-        UserExportMapper $mapper
+        UserExportMapper $mapper,
+        ExportUserAction $action
 
     ) {
-        $users = $this->userRepository->list($request->validated());
-
-        return $exportService->exportToCSV(
-            $users,
-            $mapper->columns(),
-            'usuarios'
-        );
+        return $action->execute($request, $exportService, $mapper);
     }
 }
