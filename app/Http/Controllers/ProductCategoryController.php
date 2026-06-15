@@ -2,8 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\CategoryResource;
-use App\Models\ProductCategory;
+use App\Actions\ProductCategory\IndexProductCategoryAction;
 
 class ProductCategoryController extends Controller
 {
@@ -12,10 +11,8 @@ class ProductCategoryController extends Controller
      *
      * @return void
      */
-    public function index()
+    public function index(IndexProductCategoryAction $action)
     {
-        $categories = ProductCategory::all();
-
-        return CategoryResource::collection($categories);
+        return $action->execute();
     }
 }
