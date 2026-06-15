@@ -48,10 +48,7 @@ class FavoriteProductsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
-    {
-        $user = $request->user();
-    }
+    public function update(Request $request, $id) {}
 
     /**
      * Favorite or unfavorite a product from an user

@@ -14,8 +14,8 @@ class FavoriteProductAction
         $user = $request->user();
 
         try {
-            $favorite = FavoriteProducts::where('user_id', $user->id)
-                ->where('product_id', $product->id)
+            $favorite = $user->favoriteProducts()
+                ->whereKey($product->id)
                 ->first();
 
             $shouldFavorite = $request->has('favorite')
