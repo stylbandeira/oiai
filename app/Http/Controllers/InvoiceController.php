@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Jobs\ProcessInvoiceJob;
+use App\Http\Requests\Invoice\ProcessInvoiceRequest;
+use App\Http\Requests\Invoice\ProcessXMLRequest;
 use App\Models\Address;
 use App\Models\Company;
 use App\Models\Invoice;
@@ -12,7 +14,6 @@ use App\Services\NFCeScraperService;
 use App\Services\NFCeXMLParserService;
 use Carbon\Carbon;
 use DateTime;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -33,12 +34,8 @@ class InvoiceController extends Controller
     /**
      * Endpoint específico para testar XML direto
      */
-    public function processXML(Request $request)
+    public function processXML(ProcessXMLRequest $request)
     {
-        $request->validate([
-            'xml_content' => 'required|string',
-        ]);
-
         $xmlContent = $request->input('xml_content');
         $result = $this->xmlParser->parseXML($xmlContent);
 
@@ -61,16 +58,11 @@ class InvoiceController extends Controller
      * @param Request $request
      * @return void
      */
-    public function processInvoice(Request $request)
+    public function processInvoice(ProcessInvoiceRequest $request)
     {
         $user = Auth::user();
         $receipt_data = '';
         $invoice_data = [];
-
-        $request->validate([
-            'qr_code_data' => 'required_without:invoice_code|string',
-            'invoice_code' => 'required_without:qr_code_data|string'
-        ]);
 
         $qrData = $request->input('qr_code_data');
 
