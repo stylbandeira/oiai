@@ -76,7 +76,9 @@ class AveragePriceJob implements ShouldQueue
                     'product' => $product_array
                 ];
 
-                $product->average_price = ($product->average_price + $average_price) / 2;
+                $product->average_price = $product->average_price > 0
+                    ? ((float) $product->average_price + $average_price) / 2
+                    : $average_price;
                 $product->save();
             }
         }
