@@ -80,7 +80,7 @@ class Product extends BaseModel
     public function averagePrice(): Attribute
     {
         return Attribute::make(
-            get: fn(float $value) => number_format($value, 2)
+            get: fn($value) => number_format($value, 2)
         );
     }
 }
