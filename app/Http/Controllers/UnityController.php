@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Unity\IndexUnityAction;
 use App\Http\Requests\Unity\UnityIndexRequest;
-use App\Http\Resources\UnityResource;
-use App\Models\Unity;
 use Illuminate\Http\Request;
 
 class UnityController extends Controller
@@ -14,24 +13,9 @@ class UnityController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(UnityIndexRequest $request)
+    public function index(UnityIndexRequest $request, IndexUnityAction $action)
     {
-        $query = Unity::query();
-
-        if ($request->filled('search')) {
-            $searchTerm = '%' . $request->search . '%';
-
-            $query->where(function ($query) use ($searchTerm) {
-                $query->where('name', 'like', $searchTerm)
-                    ->orWhere('abbreviation', 'like', $searchTerm);
-            });
-        }
-
-        $unities = $query
-            ->orderBy('name')
-            ->paginate($request->per_page ?? 15);
-
-        return UnityResource::collection($unities);
+        return $action->execute($request);
     }
 
     /**
