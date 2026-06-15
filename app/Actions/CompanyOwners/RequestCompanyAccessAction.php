@@ -3,15 +3,14 @@
 namespace App\Actions\CompanyOwners;
 
 use App\Models\Company;
-use App\Models\CompanyOwners;
 use App\Repositories\CompanyOwnerRepository;
-use App\Repositories\EventRepository;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 
 class RequestCompanyAccessAction
 {
     public function __construct(
-        private EventRepository $eventRepo,
+        private NotificationService $notificationService,
         private CompanyOwnerRepository $companyOwnerRepository
     ) {}
 
@@ -25,7 +24,7 @@ class RequestCompanyAccessAction
             ], 400);
         }
 
-        $this->eventRepo->createOwnershipRequestEvent($request->user(), $company);
+        $this->notificationService->createOwnershipRequestEvent($request->user(), $company);
 
         return response([
             'message' => 'Solicitação feita com sucesso!',

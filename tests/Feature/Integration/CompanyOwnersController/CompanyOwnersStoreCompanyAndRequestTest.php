@@ -6,6 +6,7 @@ use App\Models\CompanyOwners;
 use App\Models\Event;
 use App\Models\User;
 use App\Repositories\EventRepository;
+use App\Services\NotificationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use RuntimeException;
 use Tests\TestCase;
@@ -86,7 +87,7 @@ class CompanyOwnersStoreCompanyAndRequestTest extends TestCase
     {
         $companyUser = User::factory()->company()->create();
 
-        $this->mock(EventRepository::class, function ($mock) {
+        $this->mock(NotificationService::class, function ($mock) {
             $mock->shouldReceive('createOwnershipRequestEvent')
                 ->once()
                 ->andThrow(new RuntimeException('Event creation failed.'));

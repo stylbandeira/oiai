@@ -3,20 +3,22 @@
 namespace App\Actions\Event;
 
 use App\Http\Requests\Event\EventCheckAllRequest;
-use App\Models\Event;
+use App\Repositories\EventRepository;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class CheckAllEventsAction
 {
+    public function __construct(private EventRepository $eventRepository) {}
     public function execute(EventCheckAllRequest $request)
     {
         $notificationsIds = collect($request->validated()['notifications'])
-            ->pluck('id');
+            ->pluck('id')
+            ->toArray();
 
         try {
             DB::transaction(function () use ($notificationsIds) {
-                Event::whereIn('id', $notificationsIds)->update(['checked' => true]);
+                $this->eventRepository->updateAll($notificationsIds, ['checked' => true]);
             });
         } catch (\Throwable $th) {
             Log::alert($th);

@@ -157,16 +157,16 @@ class User extends Authenticatable
         return Event::query()
             ->where(function ($query) use ($companiesIds) {
 
-                if ($this->type === 'client') {
+                if ($this->isClient()) {
                     $query->where('user_id', $this->id)
                         ->where('checked', false);
                 }
 
-                if ($this->type === 'admin') {
+                if ($this->isAdmin()) {
                     $query->orWhere('target_type', 'admin');
                 }
 
-                if ($this->type === 'company') {
+                if ($this->isCompany()) {
                     $query->orWhere(function ($query) use ($companiesIds) {
                         $query->where('target_type', 'company')
                             ->where('entity_type', 'company')
