@@ -1,0 +1,39 @@
+<?php
+
+namespace App\Actions\ListItens;
+
+use App\Http\Requests\ListItens\ListItensUpdateRequest;
+use App\Models\ItensList;
+use App\Models\ListProducts;
+
+class UpdateListItensAction
+{
+    public function execute(ListItensUpdateRequest $request, ItensList $list)
+    {
+        $list->load('listProducts');
+
+        try {
+            $list->listProducts()->update([
+                'completed' => false,
+            ]);
+
+            $completedItems = $request->validated()['completed_items'];
+
+            if (!empty($completedItems)) {
+                ListProducts::where('list_id', $list->id)
+                    ->whereIn('product_id', $completedItems)
+                    ->update(['completed' => true]);
+            }
+
+            return response([
+                'message' => 'Itens marcados como concluídos com sucesso',
+                'completed_count' => count($completedItems),
+            ]);
+        } catch (\Throwable $th) {
+            return response([
+                'message' => 'Erro ao atualizar lista',
+                'error' => $th->getMessage(),
+            ]);
+        }
+    }
+}
