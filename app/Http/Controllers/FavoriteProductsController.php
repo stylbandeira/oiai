@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\FavoriteProducts\FavoriteProductRequest;
 use App\Models\FavoriteProducts;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
 
 class FavoriteProductsController extends Controller
 {
@@ -61,19 +61,9 @@ class FavoriteProductsController extends Controller
      * @param Product $product
      * @return void
      */
-    public function favorite(Request $request, Product $product)
+    public function favorite(FavoriteProductRequest $request, Product $product)
     {
         $user = $request->user();
-
-        $validator = Validator::make($request->all(), [
-            'favorite' => 'sometimes|boolean',
-        ]);
-
-        if ($validator->fails()) {
-            return response([
-                'errors' => $validator->errors()
-            ], 422);
-        }
 
         try {
             $favorite = FavoriteProducts::where('user_id', $user->id)
@@ -81,7 +71,7 @@ class FavoriteProductsController extends Controller
                 ->first();
 
             $shouldFavorite = $request->has('favorite')
-                ? $validator->validated()['favorite']
+                ? $request->validated()['favorite']
                 : !$favorite;
 
             if ($shouldFavorite && !$favorite) {
