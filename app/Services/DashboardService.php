@@ -53,7 +53,7 @@ class DashboardService
             }
         }
 
-        return [];
+        return $products;
     }
 
     private function calculateSystemHealth(): float
