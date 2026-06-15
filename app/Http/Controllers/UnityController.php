@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Unity\UnityIndexRequest;
 use App\Http\Resources\UnityResource;
 use App\Models\Unity;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class UnityController extends Controller
 {
@@ -14,19 +14,8 @@ class UnityController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(Request $request)
+    public function index(UnityIndexRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'search' => 'sometimes|string',
-            'per_page' => 'sometimes|integer|min:1|max:100',
-        ]);
-
-        if ($validator->fails()) {
-            return response([
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
         $query = Unity::query();
 
         if ($request->filled('search')) {
