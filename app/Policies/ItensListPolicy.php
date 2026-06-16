@@ -42,7 +42,13 @@ class ItensListPolicy
      */
     public function create(User $user)
     {
-        return true;
+        if ($user->isAdmin()) {
+            return false;
+        } else if ($user->isClient()) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

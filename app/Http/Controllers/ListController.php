@@ -53,7 +53,7 @@ class ListController extends Controller
         return $action->execute($list);
     }
 
-    public function optimize(Request $request, ItensList $list, OptimizeListAction $action)
+    public function optimize(ItensList $list, OptimizeListAction $action)
     {
         return $action->execute($list);
     }

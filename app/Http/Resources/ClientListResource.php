@@ -27,7 +27,6 @@ class ClientListResource extends JsonResource
             'products' => $this->whenLoaded('listProducts', function () {
                 return ListProductResource::collection($this->listProducts);
             }),
-
             'companyId' => $this->whenLoaded('listProducts.companyProduct.company', function () {
                 return $this->listProducts->company->id;
             }),

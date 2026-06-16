@@ -6,16 +6,16 @@ use App\Http\Resources\ClientProductResource;
 use App\Http\Resources\CompanyResource;
 use App\Http\Resources\ListProductResource;
 use App\Models\ItensList;
+use App\Repositories\ListRepository;
 
 class ShowListAction
 {
+    public function __construct(
+        private ListRepository $listRepository,
+    ) {}
     public function execute(ItensList $list)
     {
-        $list->load([
-            'listProducts.product.unity',
-            'listProducts.product.category',
-            'listProducts.companyProduct.company',
-        ]);
+        $this->listRepository->loadDefaultRelations($list);
 
         $responseList = [
             'id' => $list->id,

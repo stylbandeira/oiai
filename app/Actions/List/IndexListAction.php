@@ -4,20 +4,20 @@ namespace App\Actions\List;
 
 use App\Http\Resources\ClientListResource;
 use App\Models\ItensList;
+use App\Repositories\ListRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class IndexListAction
 {
+    public function __construct(
+        private ListRepository $listRepository
+    ) {}
     public function execute(Request $request)
     {
         $user = Auth::user();
 
-        $itensList = ItensList::where('user_id', $user->id)
-            ->with(['products', 'listProducts.product.unity', 'listProducts.product.category'])
-            ->latest()
-            ->orderByDesc('id')
-            ->paginate($request->per_page ?? 15);
+        $itensList = $this->listRepository->userListsPaginated($user->id, $request->all());
 
         return ClientListResource::collection($itensList);
     }

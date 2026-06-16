@@ -4,20 +4,24 @@ namespace App\Actions\List;
 
 use App\Http\Requests\List\ListUpdateRequest;
 use App\Models\ItensList;
+use App\Repositories\ListProductsRepository;
+use App\Repositories\ListRepository;
 
 class UpdateListAction
 {
+    public function __construct(
+        private ListRepository $listRepository,
+        private ListProductsRepository $listProductsRepository,
+    ) {}
+
     public function execute(ListUpdateRequest $request, ItensList $list)
     {
         $list->load('listProducts');
-        $list->update($request->safe()->except('items'));
+        $this->listRepository->update($list->id, $request->safe()->except('items'));
 
-        $completedProductIds = $list->listProducts()
-            ->where('completed', true)
-            ->pluck('product_id')
-            ->toArray();
+        $completedProductIds = $this->listRepository->getCompletedProductIds($list);
 
-        $list->listProducts()->where('completed', 0)->delete();
+        $this->listRepository->deleteIncompleteItems($list);
 
         if ($request->has('items')) {
             foreach ($request->validated()['items'] as $item) {
@@ -25,10 +29,11 @@ class UpdateListAction
                     continue;
                 }
 
-                $list->listProducts()->create([
-                    'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                ]);
+                $this->listProductsRepository->createProductOnList(
+                    $item['product_id'],
+                    $list->id,
+                    ['quantity' => $item['quantity']]
+                );
             }
         }
 

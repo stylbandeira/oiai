@@ -86,4 +86,9 @@ class ProductRepository
     {
         return $this->product->destroy($id);
     }
+
+    public function incrementListAdded(array $productsIds)
+    {
+        $this->product->whereIn('id', $productsIds)->increment('listAdded');
+    }
 }
