@@ -14,7 +14,7 @@ class ListItensUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'completed_items' => 'required|array',
+            'completed_items' => 'sometimes|array',
             'completed_items.*' => 'integer|exists:products,id',
         ];
     }
