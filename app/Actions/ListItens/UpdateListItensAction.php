@@ -4,10 +4,14 @@ namespace App\Actions\ListItens;
 
 use App\Http\Requests\ListItens\ListItensUpdateRequest;
 use App\Models\ItensList;
-use App\Models\ListProducts;
+use App\Repositories\ListProductsRepository;
 
 class UpdateListItensAction
 {
+    public function __construct(
+        private ListProductsRepository $listProductsRepository
+    ) {}
+
     public function execute(ListItensUpdateRequest $request, ItensList $list)
     {
         $list->load('listProducts');
@@ -20,9 +24,7 @@ class UpdateListItensAction
             $completedItems = $request->validated()['completed_items'];
 
             if (!empty($completedItems)) {
-                ListProducts::where('list_id', $list->id)
-                    ->whereIn('product_id', $completedItems)
-                    ->update(['completed' => true]);
+                $this->listProductsRepository->updateProductsOnList($completedItems, $list->id, ['completed' => true]);
             }
 
             return response([

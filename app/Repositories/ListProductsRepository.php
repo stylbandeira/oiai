@@ -44,10 +44,10 @@ class ListProductsRepository
         return $record;
     }
 
-    public function updateProductOnList(string $product_id, string $list_id, array $data)
+    public function updateProductsOnList(array $product_ids, string $list_id, array $data)
     {
         ListProducts::where('list_id', $list_id)
-            ->where('product_id', $product_id)
+            ->whereIn('product_id', $product_ids)
             ->update($data);
     }
 

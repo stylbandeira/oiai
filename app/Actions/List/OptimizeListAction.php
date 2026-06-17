@@ -37,7 +37,7 @@ class OptimizeListAction
         foreach ($cheapest as $cheap) {
             $optimizedList[$cheap->company->name][] = new ClientProductResource($cheap->product);
 
-            $this->listProductsRepository->updateProductOnList($cheap->product_id, $list->id, [
+            $this->listProductsRepository->updateProductsOnList([$cheap->product_id], $list->id, [
                 'company_product_id' => $cheap->id,
             ]);
         }
