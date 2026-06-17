@@ -23,22 +23,6 @@ class ImportProductAction
             Storage::delete($filePath);
             $products = $result['data'];
 
-            $validator = Validator::make($products, [
-                '*.name' => 'required|string',
-                '*.quantity' => 'required|integer',
-                '*.unity' => ['required', new ExistsOr('unities', ['id', 'name'])],
-                '*.category' => ['required', new ExistsOr('product_category', ['id', 'name'])],
-                '*.img' => 'image',
-                '*.sku' => 'required|string|unique:products,sku',
-            ]);
-
-            if ($validator->fails()) {
-                return response([
-                    'message' => 'O arquivo não pôde ser importado pois possui dados inválidos.',
-                    'errors' => $validator->errors(),
-                ], 400);
-            }
-
             $productCollection = collect($products);
             $categoryNames = $productCollection->pluck('category')
                 ->filter(fn($c) => !is_numeric($c))
