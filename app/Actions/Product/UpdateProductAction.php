@@ -2,40 +2,34 @@
 
 namespace App\Actions\Product;
 
-use App\Http\Requests\Product\ProductUpdateRequest;
 use App\Http\Resources\AdminProductResource;
 use App\Http\Resources\ClientProductResource;
 use App\Models\Product;
-use Illuminate\Support\Facades\Storage;
+use App\Models\User;
+use App\Repositories\ProductRepository;
+use App\Services\Product\ProductImageService;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Http\UploadedFile;
 
 class UpdateProductAction
 {
-    public function execute(ProductUpdateRequest $request, Product $product)
+    public function __construct(
+        private ProductRepository $product_repository,
+        private ProductImageService $product_image_service,
+    ) {}
+
+    public function execute(Product $product, array $data, ?UploadedFile $image = null): Product
     {
-        if ($request->user()->isClient() && $product->validated) {
-            return response([
-                'message' => 'Você não tem permissão para alterar esse produto',
-            ], 403);
+        if ($image) {
+            $data['img'] = $this->product_image_service->replace(
+                $product->img,
+                $image
+            );
         }
 
-        $validatedData = $request->validated();
+        $this->product_repository->update($product->id, $data);
+        $this->product_repository->loadDefaultRelations($product);
 
-        if ($request->hasFile('img')) {
-            if ($product->img && Storage::disk('public')->exists($product->img)) {
-                Storage::disk('public')->delete($product->img);
-            }
-
-            $imgPath = $request->file('img')->store('companies/images', 'public');
-            $validatedData['img'] = $imgPath;
-        }
-
-        $product->update($validatedData);
-        $product->refresh()->load(['category', 'unity', 'companies']);
-
-        return response([
-            'product' => $request->user()->type === 'admin'
-                ? new AdminProductResource($product)
-                : new ClientProductResource($product),
-        ]);
+        return $product->refresh();
     }
 }

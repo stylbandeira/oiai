@@ -66,6 +66,8 @@ class ProductStoreTest extends TestCase
         $response = $this->actingAs($companyUser)
             ->postJson('/api/products', $payload);
 
+        // dd($response);
+
         $response->assertStatus(200);
 
         $product = Product::where('sku', 'SKU-COMPANY')->first();

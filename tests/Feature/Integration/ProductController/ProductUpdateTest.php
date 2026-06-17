@@ -42,10 +42,7 @@ class ProductUpdateTest extends TestCase
             ]);
 
         $response
-            ->assertStatus(403)
-            ->assertJsonFragment([
-                'message' => 'Você não tem permissão para alterar esse produto',
-            ]);
+            ->assertStatus(403);
     }
 
     public function test_changed_data_reflects_on_database_after_refresh(): void

@@ -21,31 +21,24 @@ class ProductRepository
         return $this->product->all();
     }
 
-    /**
-     * Returns a list of products
-     *
-     * @param string $search
-     * @param array $with
-     * @return Product
-     */
-    public function list(User $user, Request $request, array $with)
+    public function list(User $user, array $data)
     {
-        $query = $this->product->with($with);
+        $query = $this->product->with(['category', 'unity', 'companies']);
 
-        if ($request->has('search')) {
-            $searchTerm = '%' . $request->search . '%';
+        if (isset($data['search'])) {
+            $searchTerm = '%' . $data['search'] . '%';
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('name', 'like', $searchTerm)
                     ->orWhere('sku', 'like', $searchTerm);
             });
         }
 
-        if ($request->has('validated') && !$user->isClient()) {
-            if ($request->validated === 'pendentes') {
+        if (isset($data['validated']) && !$user->isClient()) {
+            if ($data['validated'] === 'pendentes') {
                 $query->where('validated', false);
             }
 
-            if ($request->validated === 'validados') {
+            if ($data['validated'] === 'validados') {
                 $query->where('validated', true);
             }
         }
@@ -63,6 +56,11 @@ class ProductRepository
             ->orderBy('listAdded', 'desc')
             ->orderBy('name', 'asc')
             ->limit(1500);
+    }
+
+    public function paginate(User $user, array $data)
+    {
+        return $this->list($user, $data)->paginate($filters['paginate'] ?? 15);
     }
 
     public function find($id)
@@ -90,5 +88,10 @@ class ProductRepository
     public function incrementListAdded(array $productsIds)
     {
         $this->product->whereIn('id', $productsIds)->increment('listAdded');
+    }
+
+    public function loadDefaultRelations(Product $product)
+    {
+        $product->with(['category', 'unity', 'companies']);
     }
 }

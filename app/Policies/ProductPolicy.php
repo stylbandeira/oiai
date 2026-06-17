@@ -59,7 +59,11 @@ class ProductPolicy
     {
         if ($user->type === 'admin') {
             return true;
+        } else if ($user->isClient() && $product->validated) {
+            return false;
         }
+
+        return true;
     }
 
     /**

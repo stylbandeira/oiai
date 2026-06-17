@@ -202,4 +202,11 @@ class User extends Authenticatable
     {
         return $this->type === self::TYPE_CLIENT;
     }
+
+    public function hasAccessToCompany(int $companyId)
+    {
+        return $this->activeCompanies()
+            ->whereKey($companyId)
+            ->exists();
+    }
 }
