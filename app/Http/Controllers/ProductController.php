@@ -21,7 +21,6 @@ use App\Http\Resources\ClientProductResource;
 use App\Models\Product;
 use App\Services\ExportService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class ProductController extends Controller
 {
@@ -124,16 +123,26 @@ class ProductController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  Product  $product
-     * @return \Illuminate\Http\Response
+     * @param integer $id
+     * @param DestroyProductAction $action
+     * @return void
      */
-    public function destroy(Product $product, DestroyProductAction $action)
+    public function destroy(int $id, DestroyProductAction $action)
     {
-        return $action->execute($product);
+        $action->execute($id);
+
+        return response([
+            'message' => 'Produto deletada com sucesso!',
+        ]);
     }
 
     public function bulkValidate(ProductBulkValidateRequest $request, BulkValidateProductAction $action)
     {
-        return $action->execute($request);
+        $affectedProducts = $action->execute($request->user(), $request->validated());
+
+        return response([
+            'message' => 'Produtos atualizados com sucesso!',
+            'count' => count($affectedProducts),
+        ]);
     }
 }

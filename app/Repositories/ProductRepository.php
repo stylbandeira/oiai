@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class ProductRepository
 {
@@ -80,9 +81,29 @@ class ProductRepository
         return $record;
     }
 
+    public function validateProducts(array $productIds, int $userId): Collection
+    {
+        try {
+            Product::whereIn('id', $productIds)
+                ->where('validated', false)
+                ->whereNull('validated_by')
+                ->whereNotNull('created_by')
+                ->update([
+                    'validated' => true,
+                    'validated_by' => $userId,
+                ]);
+            $validatedProducts = Product::whereIn('id', $productIds)->get();
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+
+        return $validatedProducts;
+    }
+
     public function delete($id)
     {
-        return $this->product->destroy($id);
+        $product = $this->find($id);
+        return $product->delete();
     }
 
     public function incrementListAdded(array $productsIds)
