@@ -78,6 +78,8 @@ class ProductPolicy
         if ($user->type === 'admin') {
             return true;
         }
+
+        return false;
     }
 
     /**
