@@ -2,25 +2,16 @@
 
 namespace App\Actions\User;
 
-use App\Http\Resources\ClientDashboardResource;
-use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use App\Repositories\UserRepository;
 
 class DashboardDataUserAction
 {
-    public function execute(Request $request)
+    public function __construct(
+        private UserRepository $user_repository,
+    ) {}
+
+    public function execute(int $userId)
     {
-        if (!$request->user()->isClient()) {
-            return response([
-                'message' => 'Não autorizado',
-            ], 403);
-        }
-
-        $user = User::with('recentActivity')->findOrFail(Auth::id());
-
-        return response([
-            'dashboardData' => new ClientDashboardResource($user),
-        ]);
+        return $this->user_repository->find($userId);
     }
 }

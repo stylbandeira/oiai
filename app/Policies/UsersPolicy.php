@@ -40,6 +40,14 @@ class UsersPolicy
         return false;
     }
 
+    public function dashboardData(User $user)
+    {
+        if (!$user->isClient()) {
+            return false;
+        }
+        return true;
+    }
+
     /**
      * Determine whether the user can create models.
      *
@@ -62,7 +70,7 @@ class UsersPolicy
      */
     public function update(User $user, User $affected)
     {
-        if ($user->type === 'admin' && $affected->type !== 'admin') {
+        if ($user->isAdmin() && !$affected->isAdmin()) {
             return true;
         }
     }

@@ -22,7 +22,7 @@ class UserDashboardDataTest extends TestCase
             ->assertStatus(403);
     }
 
-    public function test_dashboard_data_returns_404_when_authenticated_user_does_not_exist(): void
+    public function test_dashboard_data_returns_403_when_authenticated_user_does_not_exist(): void
     {
         $client = User::factory()->client()->make([
             'id' => 999999,
@@ -30,7 +30,7 @@ class UserDashboardDataTest extends TestCase
 
         $this->actingAs($client)
             ->getJson('/api/dashboard-data')
-            ->assertStatus(404);
+            ->assertStatus(403);
     }
 
     public function nonClientUsersProvider(): array

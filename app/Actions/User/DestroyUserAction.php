@@ -2,38 +2,18 @@
 
 namespace App\Actions\User;
 
-use App\Models\User;
+use App\Repositories\UserRepository;
 
 class DestroyUserAction
 {
-    public function execute(User $user)
+    public function __construct(
+        private UserRepository $user_repository,
+    ) {}
+
+    public function execute(int $userId)
     {
-        $user->load('companies');
+        $this->user_repository->find($userId);
 
-        if (count($user->companies)) {
-            return response([
-                'message' => 'Apague a relação entre usuário e empresa primeiro.',
-            ], 400);
-        }
-
-        if ($user->type === 'admin') {
-            return response([
-                'message' => 'Infelizmente não é possível deletar usuários do tipo admin.',
-            ], 400);
-        }
-
-        if ($user->deleted_at) {
-            $user->restore();
-
-            return response([
-                'message' => 'Usuário reativado com sucesso!',
-            ]);
-        }
-
-        $user->delete();
-
-        return response([
-            'message' => 'Usuário excluído com sucesso!',
-        ]);
+        return  $this->user_repository->delete($userId);
     }
 }
