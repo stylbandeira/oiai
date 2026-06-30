@@ -42,6 +42,12 @@ class AuthController extends Controller
 
     public function register(ApiRegisterRequest $request, ApiRegisterAction $action)
     {
-        return $action->execute($request->validated());
+        $user = $action->execute($request->validated());
+
+        return response([
+            'user' => $user,
+            'access_token' => $user->createToken('auth_token', ['*'])->plainTextToken,
+            'token_type' => 'Bearer',
+        ], 201);
     }
 }

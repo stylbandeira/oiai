@@ -14,6 +14,7 @@ class ApiRegisterAction
             'type' => $data['user_type'],
             'name' => $data['name'],
             'email' => $data['email'],
+            'cpf' => $data['cpf'],
             'password' => Hash::make($data['password']),
         ]);
 
@@ -21,10 +22,6 @@ class ApiRegisterAction
 
         $user->sendEmailVerificationNotification();
 
-        return response([
-            'user' => $user,
-            'access_token' => $user->createToken('auth_token', ['*'])->plainTextToken,
-            'token_type' => 'Bearer',
-        ], 201);
+        return $user;
     }
 }
