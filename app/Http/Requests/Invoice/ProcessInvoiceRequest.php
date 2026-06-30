@@ -14,8 +14,8 @@ class ProcessInvoiceRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'qr_code_data' => 'required_without:invoice_code|string',
-            'invoice_code' => 'required_without:qr_code_data|string|digits:44',
+            'qr_code_data' => 'required_without:invoice_code|bail|string',
+            'invoice_code' => 'required_without:qr_code_data|bail|string|digits:44',
         ];
     }
 }
