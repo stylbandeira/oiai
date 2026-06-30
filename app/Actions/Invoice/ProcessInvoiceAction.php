@@ -4,6 +4,7 @@ namespace App\Actions\Invoice;
 
 use App\Http\Requests\Invoice\ProcessInvoiceRequest;
 use App\Models\Invoice;
+use App\Services\Invoice\InvoiceService;
 use App\Services\NFCeHtmlParserService;
 use App\Services\NFCeScraperService;
 use Carbon\Carbon;
@@ -13,9 +14,9 @@ use Illuminate\Support\Facades\Http;
 
 class ProcessInvoiceAction
 {
-    public function __construct(private NFCeScraperService $scraper)
-    {
-    }
+    public function __construct(
+        private NFCeScraperService $scraper,
+    ) {}
 
     public function execute(ProcessInvoiceRequest $request)
     {
