@@ -15,7 +15,7 @@ class ProcessInvoiceRequest extends FormRequest
     {
         return [
             'qr_code_data' => 'required_without:invoice_code|string',
-            'invoice_code' => 'required_without:qr_code_data|string',
+            'invoice_code' => 'required_without:qr_code_data|string|digits:44',
         ];
     }
 }
