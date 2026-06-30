@@ -12,6 +12,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class AveragePriceJob implements ShouldQueue
@@ -35,71 +36,50 @@ class AveragePriceJob implements ShouldQueue
      */
     public function handle()
     {
-        $job_constancy = Carbon::now()->subDays(Product::AVERAGE_PRICE_JOB_CONSTANCY_DAYS);
         $average_date_limit = Carbon::now()->subWeeks(Product::AVERAGE_PRICE_PURCHASE_DATE_LIMIT_WEEKS);
-        $data = [];
 
-        $products = Product::whereHas('userAddedProducts', function ($query) use ($job_constancy, $average_date_limit) {
-            $query->where('created_at', '>', $job_constancy)
-                ->where('purchase_date', '>', $average_date_limit)
-                ->where('processed', false);
+        $products = Product::whereHas('userAddedProducts', function ($query) use ($average_date_limit) {
+            $query->where('purchase_date', '>', $average_date_limit)
+                ->where('price', '>', 0)
+                ->whereNotNull('company_id');
         })
-            ->with('userAddedProducts', function ($query) {
-                $query->withCount('product');
+            ->with('userAddedProducts', function ($query) use ($average_date_limit) {
+                $query->where('purchase_date', '>', $average_date_limit)
+                    ->where('price', '>', 0)
+                    ->whereNotNull('company_id');
             })
             ->get();
-        //Média do produto geral
+
         foreach ($products as $product) {
+            $purchases = $product->userAddedProducts;
 
-            $product_array = $product->toArray();
+            if ($purchases->isEmpty()) {
+                continue;
+            }
 
-            $user_added_products = $product_array['user_added_products'];
-
-            if (count($product_array['user_added_products']) > 1) {
-                $company_product_price = [];
-
-                foreach ($user_added_products as $user_added_product) {
-                    $company_product_price[$user_added_product['company_id']][] = [
-                        'price' => $user_added_product['price'],
-                        'product_id' => $user_added_product['product_id']
-                    ];
-                }
-
-                $average_price = array_sum(array_column($product_array['user_added_products'], 'price')) / count($product_array['user_added_products']);
-
-                $data[] = [
-                    'product_id' => $product_array['id'],
-                    'company_product_ids' => array_column($product_array['user_added_products'], 'company_product_id'),
-                    'product_prices_by_company_id' => $company_product_price,
-                    'user_added_products' => $product_array['user_added_products'],
-                    'average_price' => $average_price,
-                    'product' => $product_array
-                ];
-
-                $product->average_price = $product->average_price > 0
-                    ? ((float) $product->average_price + $average_price) / 2
-                    : $average_price;
+            DB::transaction(function () use ($product, $purchases) {
+                $product->average_price = $purchases->avg('price');
                 $product->save();
-            }
+
+                $purchasesByCompany = $purchases->groupBy('company_id');
+                $companyIds = $purchasesByCompany->keys();
+
+                CompanyProducts::where('product_id', $product->id)
+                    ->whereNotIn('company_id', $companyIds)
+                    ->update(['average_price' => null]);
+
+                foreach ($purchasesByCompany as $companyId => $companyPurchases) {
+                    CompanyProducts::updateOrCreate([
+                        'company_id' => $companyId,
+                        'product_id' => $product->id,
+                    ], [
+                        'average_price' => $companyPurchases->avg('price'),
+                    ]);
+                }
+            });
         }
 
-        //Média do produto na empresa
-        foreach ($data as $product_data) {
-            foreach ($product_data['product_prices_by_company_id'] as $company_id => $price) {
-
-                $company_product_average_price = array_sum(array_column($price, 'price')) / count($price);
-
-                CompanyProducts::updateOrCreate([
-                    'company_id' => $company_id,
-                    'product_id' => array_column($price, 'product_id')[0]
-                ], [
-                    'average_price' => $company_product_average_price
-                ]);
-            }
-        }
-
-        UserAddedProducts::where('created_at', '>', $job_constancy)
-            ->where('processed', false)
+        UserAddedProducts::where('processed', false)
             ->update([
                 'processed' => true
             ]);

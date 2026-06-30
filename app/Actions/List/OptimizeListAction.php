@@ -27,15 +27,18 @@ class OptimizeListAction
 
         $cheapest = $companyProducts->groupBy('product_id')
             ->map(function ($items) {
-                $minPrice = $items->min('average_price');
-                return $items->filter(function ($item) use ($minPrice) {
-                    return $item->average_price == $minPrice;
-                })->values();
+                return $items
+                    ->filter(fn ($item) => $item->average_price !== null && (float) $item->average_price > 0)
+                    ->sortBy(fn ($item) => (float) $item->average_price)
+                    ->first();
             })
-            ->flatten(1);
+            ->filter();
 
         foreach ($cheapest as $cheap) {
-            $optimizedList[$cheap->company->name][] = new ClientProductResource($cheap->product);
+            $product = (new ClientProductResource($cheap->product))->resolve();
+            $product['average_price'] = (float) $cheap->average_price;
+
+            $optimizedList[$cheap->company->name][] = $product;
 
             $this->listProductsRepository->updateProductsOnList([$cheap->product_id], $list->id, [
                 'company_product_id' => $cheap->id,

@@ -39,7 +39,7 @@ class Kernel extends ConsoleKernel
             });
 
         $schedule->job(new AveragePriceJob())
-            ->everyFourHours()
+            ->everyMinute()
             ->onFailure(function () {
                 Log::error('Falha ao despachar AveragePriceJob');
             });

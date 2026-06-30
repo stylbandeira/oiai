@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -33,6 +32,10 @@ class Product extends BaseModel
         'listAdded' => 0,
         'description' => '',
         'average_price' => NULL
+    ];
+
+    protected $casts = [
+        'average_price' => 'float',
     ];
 
     public function companies()
@@ -70,17 +73,5 @@ class Product extends BaseModel
         } else {
             return 'destructive';
         }
-    }
-
-    /**
-     * Define getter and setter for average_price attribute
-     *
-     * @return Attribute
-     */
-    public function averagePrice(): Attribute
-    {
-        return Attribute::make(
-            get: fn($value) => number_format($value, 2)
-        );
     }
 }
