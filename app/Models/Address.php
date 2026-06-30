@@ -30,10 +30,10 @@ class Address extends BaseModel
 
     public function getFullAddressAttribute()
     {
-        return $this->street .
+        return str_replace(',,', ',', $this->street .
             ',' . $this->number .
             ', ' . $this->area .
             ', ' . $this->city  .
-            ', ' . $this->state;
+            ', ' . $this->state);
     }
 }
