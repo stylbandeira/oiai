@@ -49,7 +49,6 @@ class UserController extends Controller
      */
     public function index(IndexUserRequest $request, IndexUserAction $action)
     {
-        // $this->authorize('viewAny');
         $data = $request->validated();
 
         $data['with_trashed'] = $request->user()->isAdmin();
