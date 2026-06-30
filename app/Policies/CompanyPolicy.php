@@ -64,7 +64,7 @@ class CompanyPolicy
      */
     public function update(User $user, Company $company)
     {
-        if ($user->type === 'admin') {
+        if ($user->isAdmin()) {
             return true;
         }
     }
@@ -78,7 +78,7 @@ class CompanyPolicy
      */
     public function delete(User $user, Company $company)
     {
-        if ($user->type === 'admin') {
+        if ($user->isAdmin()) {
             return true;
         }
     }

@@ -37,6 +37,12 @@ class CompanyRepository
             ->findOrFail($id);
     }
 
+    public function findWithRelationships(int $companyId, array $relationships)
+    {
+        return Company::with($relationships)
+            ->findOrFail($companyId);
+    }
+
     public function create(array $data)
     {
         return $this->company->create($data);
@@ -84,7 +90,7 @@ class CompanyRepository
             $query->where('status', $request->status);
         }
 
-        if ($request->user()->type === 'admin') {
+        if ($request->user()->isAdmin()) {
 
             $query->withTrashed();
 

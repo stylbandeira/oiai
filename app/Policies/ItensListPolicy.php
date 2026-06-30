@@ -95,7 +95,7 @@ class ItensListPolicy
      */
     public function restore(User $user, ItensList $itensList)
     {
-        if ($user->type === 'admin') {
+        if ($user->isAdmin()) {
             return true;
         } else {
             return true;
@@ -111,7 +111,7 @@ class ItensListPolicy
      */
     public function forceDelete(User $user, ItensList $itensList)
     {
-        if ($user->type === 'admin') {
+        if ($user->isAdmin()) {
             return true;
         } else {
             return true;

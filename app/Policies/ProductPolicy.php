@@ -18,7 +18,7 @@ class ProductPolicy
      */
     public function viewAny(User $user)
     {
-        return $user->type === 'admin';
+        return $user->isAdmin();
     }
 
     /**
@@ -30,7 +30,7 @@ class ProductPolicy
      */
     public function view(User $user, Product $product)
     {
-        if ($user->type === 'admin') {
+        if ($user->isAdmin()) {
             return true;
         }
     }
@@ -43,7 +43,7 @@ class ProductPolicy
      */
     public function create(User $user)
     {
-        if ($user->type === 'admin') {
+        if ($user->isAdmin()) {
             return true;
         }
     }
@@ -57,7 +57,7 @@ class ProductPolicy
      */
     public function update(User $user, Product $product)
     {
-        if ($user->type === 'admin') {
+        if ($user->isAdmin()) {
             return true;
         } else if ($user->isClient() && $product->validated) {
             return false;
@@ -75,7 +75,7 @@ class ProductPolicy
      */
     public function delete(User $user, Product $product)
     {
-        if ($user->type === 'admin') {
+        if ($user->isAdmin()) {
             return true;
         }
 
@@ -91,7 +91,7 @@ class ProductPolicy
      */
     public function restore(User $user, Product $product)
     {
-        if ($user->type === 'admin') {
+        if ($user->isAdmin()) {
             return true;
         }
     }
@@ -105,7 +105,7 @@ class ProductPolicy
      */
     public function forceDelete(User $user, Product $product)
     {
-        if ($user->type === 'admin') {
+        if ($user->isAdmin()) {
             return true;
         }
     }

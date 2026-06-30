@@ -22,6 +22,7 @@ use App\Models\User;
 use App\Services\CompanyOwners\CompanyOwnerService;
 use App\Services\ExportService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -32,8 +33,7 @@ class UserController extends Controller
 
     public function dashboardData(Request $request, DashboardDataUserAction $action)
     {
-        $this->authorize('dashboardData');
-
+        $this->authorize('dashboardData', $request->user());
         $user = $action->execute($request->user()->id);
 
         return response([

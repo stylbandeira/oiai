@@ -20,6 +20,15 @@ class UserPolicyTest extends TestCase
         $this->assertTrue($policy->delete($admin, $target));
     }
 
+    public function test_client_can_see_dashboard_data(): void
+    {
+        $client = User::factory()->client()->create();
+
+        $policy = new UsersPolicy();
+
+        $this->assertTrue($policy->dashboardData($client));
+    }
+
     public function test_client_cannot_delete_user(): void
     {
         $client = User::factory()->client()->create();

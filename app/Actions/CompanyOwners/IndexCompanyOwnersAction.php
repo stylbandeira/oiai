@@ -23,7 +23,7 @@ class IndexCompanyOwnersAction
             return AdminCompanyResource::collection($companies);
         }
 
-        if ($request->user()->type === 'company') {
+        if ($request->user()->isCompany()) {
             return CompanyResource::collection($companies);
         }
     }

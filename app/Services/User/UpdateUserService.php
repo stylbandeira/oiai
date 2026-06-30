@@ -20,7 +20,7 @@ class UpdateUserService
 
         $user->update($data);
 
-        if ($user->type === 'company') {
+        if ($user->isCompany()) {
             $this->companyOwnerService->sync($user, $companies, $approvedBy);
         } else {
             $this->companyOwnerService->detach($user);
