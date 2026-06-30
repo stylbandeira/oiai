@@ -12,6 +12,7 @@ use App\Http\Requests\List\ListStoreRequest;
 use App\Http\Requests\List\ListUpdateRequest;
 use App\Models\ItensList;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class ListController extends Controller
 {
@@ -50,6 +51,8 @@ class ListController extends Controller
      */
     public function show(ItensList $list, ShowListAction $action)
     {
+        Log::alert($action->execute($list));
+
         return $action->execute($list);
     }
 

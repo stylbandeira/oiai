@@ -115,7 +115,6 @@ class ProcessInvoiceJob implements ShouldQueue
                     'name' => $productData->descricao,
                     'unit_id' => $this->unities[strtolower($productData->unidade)]['id'] ?? 1,
                     'quantity' => 1,
-                    'average_price' => $productData->valor_unitario,
                     'created_by' => $user->id
                 ],
             );
@@ -134,7 +133,7 @@ class ProcessInvoiceJob implements ShouldQueue
                             'company_id' => $company->id,
                         ],
                         [
-                            'average_price' => $productData->valor_unitario
+                            'average_price' => null
                         ]
                     );
 

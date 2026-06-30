@@ -2,13 +2,16 @@
 
 namespace Tests\Feature\Integration\ListController;
 
+use App\Jobs\AveragePriceJob;
 use App\Models\Company;
 use App\Models\CompanyProducts;
 use App\Models\ItensList;
 use App\Models\ListProducts;
 use App\Models\Product;
 use App\Models\User;
+use App\Models\UserAddedProducts;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
 
 class ListOptimizeTest extends TestCase
@@ -64,6 +67,198 @@ class ListOptimizeTest extends TestCase
             'id' => $list->id,
             'optimized' => true,
         ]);
+    }
+
+    public function test_optimized_list_is_cheaper_when_product_price_is_above_one_thousand(): void
+    {
+        $user = User::factory()->client()->create();
+        $list = $this->createList($user);
+        $product = Product::factory()->create([
+            'name' => 'Produto caro',
+            'average_price' => 1250.75,
+        ]);
+        $this->createListProduct($list, $product, 2);
+
+        $expensiveCompanyProduct = $this->createCompanyProduct($product, 1200.50);
+        $cheapCompanyProduct = $this->createCompanyProduct($product, 1100.25);
+
+        $this->actingAs($user)
+            ->getJson('/api/lists/' . $list->id)
+            ->assertOk()
+            ->assertJsonPath('list.products.0.average_price', 1250.75);
+
+        $this->actingAs($user)
+            ->postJson('/api/lists/' . $list->id . '/optimize')
+            ->assertOk()
+            ->assertJsonFragment(['average_price' => 1100.25]);
+
+        $response = $this->actingAs($user)
+            ->getJson('/api/lists/' . $list->id);
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('list.products.0.average_price', 1250.75)
+            ->assertJsonFragment(['average_price' => 1100.25]);
+
+        $this->assertDatabaseHas('list_products', [
+            'list_id' => $list->id,
+            'product_id' => $product->id,
+            'company_product_id' => $cheapCompanyProduct->id,
+        ]);
+        $this->assertDatabaseMissing('list_products', [
+            'list_id' => $list->id,
+            'product_id' => $product->id,
+            'company_product_id' => $expensiveCompanyProduct->id,
+        ]);
+    }
+
+    public function test_zero_company_price_is_not_considered_the_cheapest(): void
+    {
+        $user = User::factory()->client()->create();
+        $list = $this->createList($user);
+        $product = Product::factory()->create(['average_price' => 15]);
+        $this->createListProduct($list, $product, 1);
+
+        $invalidCompanyProduct = $this->createCompanyProduct($product, 0);
+        $cheapCompanyProduct = $this->createCompanyProduct($product, 10);
+
+        $this->actingAs($user)
+            ->postJson('/api/lists/' . $list->id . '/optimize')
+            ->assertOk()
+            ->assertJsonFragment(['average_price' => 10]);
+
+        $this->assertDatabaseHas('list_products', [
+            'list_id' => $list->id,
+            'product_id' => $product->id,
+            'company_product_id' => $cheapCompanyProduct->id,
+        ]);
+        $this->assertDatabaseMissing('list_products', [
+            'list_id' => $list->id,
+            'product_id' => $product->id,
+            'company_product_id' => $invalidCompanyProduct->id,
+        ]);
+    }
+
+    public function test_calculates_and_optimizes_a_twenty_product_shopping_list(): void
+    {
+        Log::spy();
+
+        $user = User::factory()->client()->create();
+        $companies = Company::factory()->count(4)->create();
+        $products = collect();
+        $quantities = [];
+        $expectedProductPrices = [];
+        $expectedOptimizedPrices = [];
+        $expectedCompanyIds = [];
+        $expectedCompanyProductIds = [];
+
+        for ($index = 1; $index <= 20; $index++) {
+            $product = Product::factory()->create([
+                'name' => "Produto {$index}",
+                'average_price' => 0,
+            ]);
+            $cheapCompany = $companies[($index - 1) % $companies->count()];
+            $expensiveCompany = $companies[$index % $companies->count()];
+            $cheapPrice = 10.0 + $index;
+            $expensivePrice = 20.0 + $index;
+            $quantity = (($index - 1) % 3) + 1;
+
+            $cheapCompanyProduct = CompanyProducts::create([
+                'company_id' => $cheapCompany->id,
+                'product_id' => $product->id,
+                'average_price' => 0,
+            ]);
+            $expensiveCompanyProduct = CompanyProducts::create([
+                'company_id' => $expensiveCompany->id,
+                'product_id' => $product->id,
+                'average_price' => 0,
+            ]);
+
+            foreach ([
+                [$cheapCompany, $cheapCompanyProduct, $cheapPrice],
+                [$expensiveCompany, $expensiveCompanyProduct, $expensivePrice],
+            ] as [$company, $companyProduct, $price]) {
+                UserAddedProducts::unguarded(fn () => UserAddedProducts::create([
+                    'user_id' => $user->id,
+                    'company_id' => $company->id,
+                    'product_id' => $product->id,
+                    'company_product_id' => $companyProduct->id,
+                    'price' => $price,
+                    'processed' => false,
+                    'purchase_date' => now(),
+                ]));
+            }
+
+            $products->push($product);
+            $quantities[$product->id] = $quantity;
+            $expectedProductPrices[$product->id] = ($cheapPrice + $expensivePrice) / 2;
+            $expectedOptimizedPrices[$product->id] = $cheapPrice;
+            $expectedCompanyIds[$product->id] = $cheapCompany->id;
+            $expectedCompanyProductIds[$product->id] = $cheapCompanyProduct->id;
+        }
+
+        (new AveragePriceJob())->handle();
+
+        foreach ($products as $product) {
+            $this->assertEqualsWithDelta(
+                $expectedProductPrices[$product->id],
+                (float) $product->fresh()->average_price,
+                0.001,
+            );
+        }
+
+        $list = $this->createList($user);
+        foreach ($products as $product) {
+            $this->createListProduct($list, $product, $quantities[$product->id]);
+        }
+
+        $regularList = $this->actingAs($user)
+            ->getJson('/api/lists/' . $list->id)
+            ->assertOk()
+            ->json('list');
+
+        $regularTotal = collect($regularList['products'])->sum(
+            fn (array $product) => $product['average_price'] * $product['quantity'],
+        );
+        $this->assertEqualsWithDelta(998.0, $regularTotal, 0.001);
+
+        $this->actingAs($user)
+            ->postJson('/api/lists/' . $list->id . '/optimize')
+            ->assertOk();
+
+        $optimizedList = $this->actingAs($user)
+            ->getJson('/api/lists/' . $list->id)
+            ->assertOk()
+            ->assertJsonPath('optimized', true)
+            ->json('list');
+
+        $optimizedTotal = 0.0;
+        $optimizedProductCount = 0;
+
+        foreach ($optimizedList['companies'] as $companyGroup) {
+            foreach ($companyGroup['products'] as $item) {
+                $productId = $item['product']['id'];
+
+                $this->assertSame($expectedCompanyIds[$productId], $companyGroup['company']['id']);
+                $this->assertEqualsWithDelta(
+                    $expectedOptimizedPrices[$productId],
+                    (float) $item['average_price'],
+                    0.001,
+                );
+                $this->assertDatabaseHas('list_products', [
+                    'list_id' => $list->id,
+                    'product_id' => $productId,
+                    'company_product_id' => $expectedCompanyProductIds[$productId],
+                ]);
+
+                $optimizedTotal += $item['average_price'] * $quantities[$productId];
+                $optimizedProductCount++;
+            }
+        }
+
+        $this->assertSame(20, $optimizedProductCount);
+        $this->assertEqualsWithDelta(803.0, $optimizedTotal, 0.001);
+        $this->assertLessThan($regularTotal, $optimizedTotal);
     }
 
     private function createList(User $user): ItensList

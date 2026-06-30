@@ -16,13 +16,13 @@ class AveragePriceJobTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_updates_product_average_price_from_recent_unprocessed_user_added_products(): void
+    public function test_initial_zero_is_not_included_in_product_average_price(): void
     {
         Log::spy();
         $user = User::factory()->client()->create();
         $company = Company::factory()->create();
         $product = Product::factory()->create([
-            'average_price' => null,
+            'average_price' => 0,
         ]);
 
         $companyProduct = CompanyProducts::create([
@@ -39,7 +39,7 @@ class AveragePriceJobTest extends TestCase
         $this->assertEquals(15, $product->fresh()->average_price);
     }
 
-    public function test_combines_existing_product_average_price_with_new_average(): void
+    public function test_recalculates_existing_product_average_from_valid_purchases(): void
     {
         $user = User::factory()->client()->create();
         $company = Company::factory()->create();
@@ -57,7 +57,48 @@ class AveragePriceJobTest extends TestCase
 
         (new AveragePriceJob())->handle();
 
-        $this->assertEquals(22.5, $product->fresh()->average_price);
+        $this->assertEquals(15, $product->fresh()->average_price);
+    }
+
+    public function test_calculates_average_from_a_single_valid_purchase(): void
+    {
+        $user = User::factory()->client()->create();
+        $company = Company::factory()->create();
+        $product = Product::factory()->create(['average_price' => 0]);
+        $companyProduct = CompanyProducts::create([
+            'company_id' => $company->id,
+            'product_id' => $product->id,
+            'average_price' => null,
+        ]);
+
+        $this->createUserAddedProduct($user, $company, $product, $companyProduct, 27.99);
+
+        (new AveragePriceJob())->handle();
+
+        $this->assertEquals(27.99, $product->fresh()->average_price);
+        $this->assertEquals(27.99, $companyProduct->fresh()->average_price);
+    }
+
+    public function test_uses_processed_purchases_from_the_valid_window_when_recalculating(): void
+    {
+        $user = User::factory()->client()->create();
+        $company = Company::factory()->create();
+        $product = Product::factory()->create(['average_price' => 100]);
+        $companyProduct = CompanyProducts::create([
+            'company_id' => $company->id,
+            'product_id' => $product->id,
+            'average_price' => 100,
+        ]);
+
+        $this->createUserAddedProduct($user, $company, $product, $companyProduct, 10, [
+            'processed' => true,
+        ]);
+        $this->createUserAddedProduct($user, $company, $product, $companyProduct, 20);
+
+        (new AveragePriceJob())->handle();
+
+        $this->assertEquals(15, $product->fresh()->average_price);
+        $this->assertEquals(15, $companyProduct->fresh()->average_price);
     }
 
     public function test_updates_company_product_average_price_grouped_by_company(): void
@@ -84,6 +125,8 @@ class AveragePriceJobTest extends TestCase
         $this->createUserAddedProduct($user, $secondCompany, $product, $secondCompanyProduct, 40);
 
         (new AveragePriceJob())->handle();
+
+        $this->assertEqualsWithDelta(23.33, $product->fresh()->average_price, 0.001);
 
         $this->assertDatabaseHas('company_products', [
             'id' => $firstCompanyProduct->id,
@@ -120,7 +163,7 @@ class AveragePriceJobTest extends TestCase
         ]);
     }
 
-    public function test_ignores_old_or_already_processed_user_added_products_for_average(): void
+    public function test_ignores_expired_and_zero_priced_purchases(): void
     {
         $user = User::factory()->client()->create();
         $company = Company::factory()->create();
@@ -134,14 +177,9 @@ class AveragePriceJobTest extends TestCase
         ]);
 
         $this->createUserAddedProduct($user, $company, $product, $companyProduct, 10, [
-            'created_at' => now()->subDays(Product::AVERAGE_PRICE_JOB_CONSTANCY_DAYS + 1),
-        ]);
-        $this->createUserAddedProduct($user, $company, $product, $companyProduct, 20, [
-            'processed' => true,
-        ]);
-        $this->createUserAddedProduct($user, $company, $product, $companyProduct, 30, [
             'purchase_date' => now()->subWeeks(Product::AVERAGE_PRICE_PURCHASE_DATE_LIMIT_WEEKS + 1),
         ]);
+        $this->createUserAddedProduct($user, $company, $product, $companyProduct, 0);
 
         (new AveragePriceJob())->handle();
 
