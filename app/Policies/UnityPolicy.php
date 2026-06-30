@@ -18,7 +18,7 @@ class UnityPolicy
      */
     public function viewAny(User $user)
     {
-        if ($user->type === 'admin') {
+        if ($user->isAdmin()) {
             return true;
         }
     }
@@ -32,7 +32,7 @@ class UnityPolicy
      */
     public function view(User $user, Unity $unity)
     {
-        if ($user->type === 'admin') {
+        if ($user->isAdmin()) {
             return true;
         }
     }
@@ -45,7 +45,7 @@ class UnityPolicy
      */
     public function create(User $user)
     {
-        if ($user->type === 'admin') {
+        if ($user->isAdmin()) {
             return true;
         }
     }
@@ -59,7 +59,7 @@ class UnityPolicy
      */
     public function update(User $user, Unity $unity)
     {
-        if ($user->type === 'admin') {
+        if ($user->isAdmin()) {
             return true;
         }
     }
@@ -73,7 +73,7 @@ class UnityPolicy
      */
     public function delete(User $user, Unity $unity)
     {
-        if ($user->type === 'admin') {
+        if ($user->isAdmin()) {
             return true;
         }
     }
@@ -87,7 +87,7 @@ class UnityPolicy
      */
     public function restore(User $user, Unity $unity)
     {
-        if ($user->type === 'admin') {
+        if ($user->isAdmin()) {
             return true;
         }
     }
@@ -101,7 +101,7 @@ class UnityPolicy
      */
     public function forceDelete(User $user, Unity $unity)
     {
-        if ($user->type === 'admin') {
+        if ($user->isAdmin()) {
             return true;
         }
     }

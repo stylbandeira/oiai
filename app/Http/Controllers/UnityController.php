@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\Unity\IndexUnityAction;
 use App\Http\Requests\Unity\UnityIndexRequest;
+use App\Http\Resources\UnityResource;
 use Illuminate\Http\Request;
 
 class UnityController extends Controller
@@ -15,7 +16,9 @@ class UnityController extends Controller
      */
     public function index(UnityIndexRequest $request, IndexUnityAction $action)
     {
-        return $action->execute($request);
+        $unities = $action->execute($request->validated());
+
+        return UnityResource::collection($unities);
     }
 
     /**

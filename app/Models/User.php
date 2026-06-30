@@ -100,6 +100,13 @@ class User extends Authenticatable
             ->wherePivot('status', 'active');
     }
 
+    public function ownsActiveCompany(Company $company): bool
+    {
+        return $this->activeCompanies()
+            ->whereKey($company->id)
+            ->exists();
+    }
+
     public function pendingCompanies()
     {
         return $this->belongsToMany(Company::class, 'company_owners', 'user_id', 'company_id')
@@ -150,16 +157,16 @@ class User extends Authenticatable
         return Event::query()
             ->where(function ($query) use ($companiesIds) {
 
-                if ($this->type === 'client') {
+                if ($this->isClient()) {
                     $query->where('user_id', $this->id)
                         ->where('checked', false);
                 }
 
-                if ($this->type === 'admin') {
+                if ($this->isAdmin()) {
                     $query->orWhere('target_type', 'admin');
                 }
 
-                if ($this->type === 'company') {
+                if ($this->isCompany()) {
                     $query->orWhere(function ($query) use ($companiesIds) {
                         $query->where('target_type', 'company')
                             ->where('entity_type', 'company')
@@ -194,5 +201,12 @@ class User extends Authenticatable
     public function isClient(): bool
     {
         return $this->type === self::TYPE_CLIENT;
+    }
+
+    public function hasAccessToCompany(int $companyId)
+    {
+        return $this->activeCompanies()
+            ->whereKey($companyId)
+            ->exists();
     }
 }

@@ -76,10 +76,63 @@ class ListItensUpdateTest extends TestCase
         ]);
     }
 
+    public function test_can_mark_only_one_item_as_completed_and_then_unmark_all_items(): void
+    {
+        $user = User::factory()->client()->create();
+        $list = $this->createList($user);
+        $firstProduct = Product::factory()->create();
+        $completedProduct = Product::factory()->create();
+        $thirdProduct = Product::factory()->create();
+
+        $this->createListProduct($list, $firstProduct);
+        $this->createListProduct($list, $completedProduct);
+        $this->createListProduct($list, $thirdProduct);
+
+        $this->actingAs($user)
+            ->putJson('/api/listItems/' . $list->id, [
+                'completed_items' => [$completedProduct->id],
+            ])
+            ->assertStatus(200)
+            ->assertJsonFragment([
+                'message' => 'Itens marcados como concluídos com sucesso',
+                'completed_count' => 1,
+            ]);
+
+        $this->assertDatabaseHas('list_products', [
+            'list_id' => $list->id,
+            'product_id' => $completedProduct->id,
+            'completed' => true,
+        ]);
+
+        $this->assertEquals(
+            [$completedProduct->id],
+            ListProducts::where('list_id', $list->id)
+                ->where('completed', true)
+                ->pluck('product_id')
+                ->all()
+        );
+
+        $this->actingAs($user)
+            ->putJson('/api/listItems/' . $list->id, [
+                'completed_items' => [],
+            ])
+            ->assertStatus(200)
+            ->assertJsonFragment([
+                'message' => 'Itens marcados como concluídos com sucesso',
+                'completed_count' => 0,
+            ]);
+
+        $this->assertSame(
+            0,
+            ListProducts::where('list_id', $list->id)
+                ->where('completed', true)
+                ->count()
+        );
+    }
+
     public function invalidPayloadsProvider(): array
     {
         return [
-            [[], 'completed_items'],
             [['completed_items' => 'not-an-array'], 'completed_items'],
             [['completed_items' => ['not-an-integer']], 'completed_items.0'],
             [['completed_items' => [999999]], 'completed_items.0'],

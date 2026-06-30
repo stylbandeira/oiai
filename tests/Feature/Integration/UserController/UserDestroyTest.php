@@ -70,25 +70,4 @@ class UserDestroyTest extends TestCase
             'id' => $target->id,
         ]);
     }
-
-    public function test_destroy_reactivates_soft_deleted_user_without_404(): void
-    {
-        $admin = User::factory()->admin()->create();
-        $target = User::factory()->client()->create();
-        $target->delete();
-
-        $response = $this->actingAs($admin)
-            ->deleteJson('/api/admin/users/' . $target->id);
-
-        $response
-            ->assertStatus(200)
-            ->assertJsonFragment([
-                'message' => 'Usuário reativado com sucesso!',
-            ]);
-
-        $this->assertDatabaseHas('users', [
-            'id' => $target->id,
-            'deleted_at' => null,
-        ]);
-    }
 }

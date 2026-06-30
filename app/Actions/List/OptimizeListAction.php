@@ -6,18 +6,24 @@ use App\Http\Resources\ClientProductResource;
 use App\Models\CompanyProducts;
 use App\Models\ItensList;
 use App\Models\ListProducts;
+use App\Repositories\CompanyProductsRepository;
+use App\Repositories\ListProductsRepository;
+use App\Repositories\ListRepository;
 
 class OptimizeListAction
 {
+    public function __construct(
+        private CompanyProductsRepository $companyProductsRepository,
+        private ListProductsRepository $listProductsRepository,
+        private ListRepository $listRepository,
+    ) {}
     public function execute(ItensList $list)
     {
         $list->load('products');
 
-        $response = [];
+        $optimizedList = [];
 
-        $companyProducts = CompanyProducts::whereIn('product_id', $list->products->pluck('id'))
-            ->with(['product', 'company'])
-            ->get();
+        $companyProducts = $this->companyProductsRepository->getByProductIdsWithPivots($list->products->pluck('id')->toArray());
 
         $cheapest = $companyProducts->groupBy('product_id')
             ->map(function ($items) {
@@ -29,20 +35,17 @@ class OptimizeListAction
             ->flatten(1);
 
         foreach ($cheapest as $cheap) {
-            $response[$cheap->company->name][] = new ClientProductResource($cheap->product);
+            $optimizedList[$cheap->company->name][] = new ClientProductResource($cheap->product);
 
-            ListProducts::where('list_id', $list->id)
-                ->where('product_id', $cheap->product_id)
-                ->update([
-                    'company_product_id' => $cheap->id,
-                ]);
+            $this->listProductsRepository->updateProductsOnList([$cheap->product_id], $list->id, [
+                'company_product_id' => $cheap->id,
+            ]);
         }
 
-        $list->optimized = true;
-        $list->save();
+        $this->listRepository->update($list->id, ['optimized' => true]);
 
         return response([
-            'list' => $response,
+            'list' => $optimizedList,
         ]);
     }
 }

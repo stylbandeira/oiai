@@ -3,15 +3,16 @@
 namespace App\Actions\Product;
 
 use App\Models\Product;
+use App\Repositories\ProductRepository;
 
 class DestroyProductAction
 {
-    public function execute(Product $product)
-    {
-        $product->delete();
+    public function __construct(
+        private ProductRepository $product_repository,
+    ) {}
 
-        return response([
-            'message' => 'Produto deletada com sucesso!',
-        ]);
+    public function execute(int $productId)
+    {
+        return $this->product_repository->delete($productId);
     }
 }

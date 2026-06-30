@@ -2,30 +2,36 @@
 
 namespace App\Repositories;
 
+use App\Models\Company;
 use App\Models\CompanyOwners;
+use App\Models\User;
 
 class CompanyOwnerRepository
 {
-    protected $model;
+    protected CompanyOwners $companyOwner;
 
-    public function __construct(CompanyOwners $model)
+    public function __construct(CompanyOwners $companyOwner)
     {
-        $this->model = $model;
+        $this->companyOwner = $companyOwner;
     }
 
     public function all()
     {
-        return $this->model->all();
+        return $this->companyOwner->all();
     }
 
     public function find($id)
     {
-        return $this->model->findOrFail($id);
+        return $this->companyOwner->findOrFail($id);
     }
 
-    public function create(array $data)
+    public function create(Company $company, User $user, string $status = CompanyOwners::STATUS_PENDING)
     {
-        return $this->model->create($data);
+        return $this->companyOwner->create([
+            'user_id' => $user->id,
+            'company_id' => $company->id,
+            'status' => $status,
+        ]);
     }
 
     public function update($id, array $data)
@@ -37,6 +43,6 @@ class CompanyOwnerRepository
 
     public function delete($id)
     {
-        return $this->model->destroy($id);
+        return $this->companyOwner->destroy($id);
     }
 }

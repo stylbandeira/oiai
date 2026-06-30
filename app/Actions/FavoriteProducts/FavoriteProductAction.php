@@ -5,28 +5,27 @@ namespace App\Actions\FavoriteProducts;
 use App\Http\Requests\FavoriteProducts\FavoriteProductRequest;
 use App\Models\FavoriteProducts;
 use App\Models\Product;
+use App\Repositories\FavoriteProductsRepository;
 use Illuminate\Support\Facades\Log;
 
 class FavoriteProductAction
 {
+    public function __construct(
+        private FavoriteProductsRepository $favoriteProductsRepository
+    ) {}
     public function execute(FavoriteProductRequest $request, Product $product)
     {
         $user = $request->user();
 
         try {
-            $favorite = FavoriteProducts::where('user_id', $user->id)
-                ->where('product_id', $product->id)
-                ->first();
+            $favorite = $this->favoriteProductsRepository->findUserProductFavorite($user, $product);
 
             $shouldFavorite = $request->has('favorite')
                 ? $request->validated()['favorite']
                 : !$favorite;
 
             if ($shouldFavorite && !$favorite) {
-                FavoriteProducts::create([
-                    'user_id' => $user->id,
-                    'product_id' => $product->id,
-                ]);
+                $this->favoriteProductsRepository->create($user, $product);
             }
 
             if (!$shouldFavorite && $favorite) {

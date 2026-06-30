@@ -11,7 +11,7 @@ class GetAuthenticatedUserAction
 {
     public function execute(User $user)
     {
-        if ($user->type === 'company') {
+        if ($user->isCompany()) {
             $user->load(['companies', 'activeCompanies', 'pendingCompanies', 'events']);
 
             return response([
@@ -19,7 +19,7 @@ class GetAuthenticatedUserAction
             ]);
         }
 
-        if ($user->type === 'admin') {
+        if ($user->isAdmin()) {
             return response([
                 'user' => (new AdminUserResource($user))->withNotifications(),
             ]);

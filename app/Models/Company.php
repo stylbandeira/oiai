@@ -73,4 +73,19 @@ class Company extends BaseModel
     {
         return $this->status === self::STATUS_ACTIVE;
     }
+
+    public function scopeWithOwnerRelationshipFor($query, User $user)
+    {
+        return $query->with(['ownerRelationship' => function ($query) use ($user) {
+            $query->where('user_id', $user->id);
+        }]);
+    }
+
+    public function scopeOwnedByActiveUser($query, User $user)
+    {
+        return $query->whereHas('owners', function ($query) use ($user) {
+            $query->where('user_id', $user->id)
+                ->where('company_owners.status', CompanyOwners::STATUS_ACTIVE);
+        });
+    }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Log;
 
 class ClientDashboardResource extends JsonResource
 {
@@ -19,9 +20,7 @@ class ClientDashboardResource extends JsonResource
             'points' => $this->points,
             'monthEconomy' => $this->monthEconomy,
             'reputation' => $this->reputation,
-            'recentActivity' => ClientEventResource::collection(
-                $this->whenLoaded('recentActivity')
-            ),
+            'recentActivity' => $this->recentActivity,
         ];
     }
 }

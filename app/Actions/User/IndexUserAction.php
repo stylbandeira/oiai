@@ -2,25 +2,19 @@
 
 namespace App\Actions\User;
 
-use App\Http\Requests\User\IndexUserRequest;
-use App\Http\Resources\AdminUserResource;
 use App\Repositories\UserRepository;
 
 class IndexUserAction
 {
-    public function __construct(private UserRepository $userRepository)
-    {
-    }
+    public function __construct(private UserRepository $user_repository) {}
 
-    public function execute(IndexUserRequest $request)
+    public function execute(array $data)
     {
-        $users = $this->userRepository->paginate(
-            $request->validated(),
+        return $this->user_repository->paginate(
+            $data,
             [
-                'with_trashed' => $request->user()->isAdmin(),
+                'with_trashed' => $data['with_trashed'],
             ]
         );
-
-        return AdminUserResource::collection($users);
     }
 }

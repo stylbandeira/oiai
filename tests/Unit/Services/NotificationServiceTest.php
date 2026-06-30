@@ -19,14 +19,14 @@ class NotificationServiceTest extends TestCase
             'name' => 'Empresa Teste',
         ]);
 
-        (new NotificationService())->userOwnershipRequestActivated($user, $company);
+        app(NotificationService::class)->userOwnershipRequestActivated($user, $company);
 
         $this->assertDatabaseHas('event', [
             'user_id' => $user->id,
             'target_type' => 'company',
             'title' => 'company_ownership_active',
             'where' => '',
-            'type' => 'user',
+            'type' => 'company',
             'points' => 0,
             'link' => 'company_ownership_active',
             'entity_type' => 'user',

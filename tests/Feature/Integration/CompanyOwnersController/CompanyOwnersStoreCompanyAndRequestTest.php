@@ -6,6 +6,7 @@ use App\Models\CompanyOwners;
 use App\Models\Event;
 use App\Models\User;
 use App\Repositories\EventRepository;
+use App\Services\NotificationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use RuntimeException;
 use Tests\TestCase;
@@ -17,7 +18,7 @@ class CompanyOwnersStoreCompanyAndRequestTest extends TestCase
     /**
      * @dataProvider forbiddenUsersProvider
      */
-    public function test_only_company_users_can_store_company_and_request_access(string $userFactoryState): void
+    public function test_only_company_and_admin_users_can_store_company_and_request_access(string $userFactoryState): void
     {
         $user = User::factory()->{$userFactoryState}()->create();
 
@@ -25,10 +26,7 @@ class CompanyOwnersStoreCompanyAndRequestTest extends TestCase
             ->postJson('/api/companies/request-with-new-company', $this->validPayload());
 
         $response
-            ->assertStatus(403)
-            ->assertJsonFragment([
-                'error' => 'Only company users can request access to companies.',
-            ]);
+            ->assertStatus(403);
     }
 
     /**
@@ -89,7 +87,7 @@ class CompanyOwnersStoreCompanyAndRequestTest extends TestCase
     {
         $companyUser = User::factory()->company()->create();
 
-        $this->mock(EventRepository::class, function ($mock) {
+        $this->mock(NotificationService::class, function ($mock) {
             $mock->shouldReceive('createOwnershipRequestEvent')
                 ->once()
                 ->andThrow(new RuntimeException('Event creation failed.'));
@@ -115,7 +113,6 @@ class CompanyOwnersStoreCompanyAndRequestTest extends TestCase
     {
         return [
             ['client'],
-            ['admin'],
         ];
     }
 

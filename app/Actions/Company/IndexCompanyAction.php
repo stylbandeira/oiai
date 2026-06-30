@@ -10,9 +10,7 @@ use Illuminate\Http\Request;
 
 class IndexCompanyAction
 {
-    public function __construct(private CompanyRepository $companyRepo)
-    {
-    }
+    public function __construct(private CompanyRepository $companyRepo) {}
 
     public function execute(Request $request)
     {
@@ -22,11 +20,11 @@ class IndexCompanyAction
             ->withCount('products')
             ->paginate($request->per_page ?? 10);
 
-        if ($request->user()->type === 'admin') {
+        if ($request->user()->isAdmin()) {
             return AdminCompanyResource::collection($companies);
         }
 
-        if ($request->user()->type === 'company') {
+        if ($request->user()->isCompany()) {
             return CompanyResource::collection($companies);
         }
 

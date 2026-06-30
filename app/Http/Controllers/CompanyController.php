@@ -10,6 +10,9 @@ use App\Actions\Company\StoreCompanyAction;
 use App\Actions\Company\UpdateCompanyAction;
 use App\Http\Requests\Company\CompanyStoreRequest;
 use App\Http\Requests\Company\CompanyUpdateRequest;
+use App\Http\Resources\AdminCompanyResource;
+use App\Http\Resources\ClientCompanyResource;
+use App\Http\Resources\CompanyResource;
 use App\Models\Company;
 use Illuminate\Http\Request;
 
@@ -47,13 +50,27 @@ class CompanyController extends Controller
      * @param  \App\Models\Company  $company
      * @return \Illuminate\Http\Response
      */
-    public function show(Company $company, ShowCompanyAction $action)
+    public function show(Request $request, Company $company, ShowCompanyAction $action)
     {
-        return $action->execute($company);
+        $user = $request->user();
+
+        $company = $action->execute($user, $company);
+
+        if ($user->isAdmin()) {
+            return new AdminCompanyResource($company);
+        }
+
+        if ($user->isCompany()) {
+            return new CompanyResource($company);
+        }
+
+        return new ClientCompanyResource($company);
     }
 
-    public function dashboardData(Request $request, Company $company, DashboardDataCompanyAction $action)
+    public function dashboardData(Company $company, DashboardDataCompanyAction $action)
     {
+        $this->authorize('view', $company);
+
         return $action->execute($company);
     }
 

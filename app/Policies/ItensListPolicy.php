@@ -42,7 +42,13 @@ class ItensListPolicy
      */
     public function create(User $user)
     {
-        return true;
+        if ($user->isAdmin()) {
+            return false;
+        } else if ($user->isClient()) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -89,7 +95,7 @@ class ItensListPolicy
      */
     public function restore(User $user, ItensList $itensList)
     {
-        if ($user->type === 'admin') {
+        if ($user->isAdmin()) {
             return true;
         } else {
             return true;
@@ -105,7 +111,7 @@ class ItensListPolicy
      */
     public function forceDelete(User $user, ItensList $itensList)
     {
-        if ($user->type === 'admin') {
+        if ($user->isAdmin()) {
             return true;
         } else {
             return true;

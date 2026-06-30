@@ -16,8 +16,11 @@ use App\Http\Requests\Product\ProductImportRequest;
 use App\Http\Requests\Product\ProductIndexRequest;
 use App\Http\Requests\Product\ProductStoreRequest;
 use App\Http\Requests\Product\ProductUpdateRequest;
+use App\Http\Resources\AdminProductResource;
+use App\Http\Resources\ClientProductResource;
 use App\Models\Product;
 use App\Services\ExportService;
+use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
@@ -28,7 +31,15 @@ class ProductController extends Controller
      */
     public function index(ProductIndexRequest $request, IndexProductAction $action)
     {
-        return $action->execute($request);
+        $user = $request->user();
+
+        $products = $action->execute($user, $request->validated());
+
+        if ($user->isAdmin()) {
+            return AdminProductResource::collection($products);
+        }
+
+        return ClientProductResource::collection($products);
     }
 
     /**
@@ -39,7 +50,21 @@ class ProductController extends Controller
      */
     public function store(ProductStoreRequest $request, StoreProductAction $action)
     {
-        return $action->execute($request);
+        $user = $request->user();
+
+        if ($request->company_id && !$user->hasAccessToCompany($request->company_id)) {
+            return response([
+                'message' => 'Usuário company não possui empresa ativa.',
+            ], 400);
+        }
+
+        $product = $action->execute($user, $request);
+
+        return response([
+            'product' => $user->isAdmin()
+                ? new AdminProductResource($product)
+                : new ClientProductResource($product),
+        ]);
     }
 
     /**
@@ -48,21 +73,34 @@ class ProductController extends Controller
      * @param  Product  $product
      * @return \Illuminate\Http\Response
      */
-    public function show(Product $product, ShowProductAction $action)
+    public function show(Request $request, Product $product, ShowProductAction $action)
     {
-        return $action->execute($product);
+        $user = $request->user();
+
+        $product = $action->execute($product);
+
+        if ($user->isClient()) {
+            return new ClientProductResource($product);
+        }
+
+        return new AdminProductResource($product);
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  Product  $product
-     * @return \Illuminate\Http\Response
-     */
     public function update(ProductUpdateRequest $request, Product $product, UpdateProductAction $action)
     {
-        return $action->execute($request, $product);
+        $this->authorize('update', $product);
+
+        $updatedProduct = $action->execute(
+            $product,
+            $request->validated(),
+            $request->file('img')
+        );
+
+        return response([
+            'product' => $request->user()->isAdmin()
+                ? new AdminProductResource($updatedProduct)
+                : new ClientProductResource($updatedProduct),
+        ]);
     }
 
     public function import(ProductImportRequest $request, ImportProductAction $action)
@@ -73,7 +111,7 @@ class ProductController extends Controller
     /**
      * Exports an CSV file of products
      *
-     * @param Request $request
+     * @param ProductExportRequest $request
      * @param ExportService $exportService
      * @return void
      */
@@ -85,16 +123,26 @@ class ProductController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @param integer $id
+     * @param DestroyProductAction $action
+     * @return void
      */
-    public function destroy(Product $product, DestroyProductAction $action)
+    public function destroy(int $id, DestroyProductAction $action)
     {
-        return $action->execute($product);
+        $action->execute($id);
+
+        return response([
+            'message' => 'Produto deletada com sucesso!',
+        ]);
     }
 
     public function bulkValidate(ProductBulkValidateRequest $request, BulkValidateProductAction $action)
     {
-        return $action->execute($request);
+        $affectedProducts = $action->execute($request->user(), $request->validated());
+
+        return response([
+            'message' => 'Produtos atualizados com sucesso!',
+            'count' => count($affectedProducts),
+        ]);
     }
 }

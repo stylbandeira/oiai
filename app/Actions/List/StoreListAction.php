@@ -6,28 +6,23 @@ use App\Http\Requests\List\ListStoreRequest;
 use App\Http\Resources\ClientListResource;
 use App\Models\ItensList;
 use App\Models\Product;
+use App\Repositories\ListRepository;
+use App\Repositories\ProductRepository;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class StoreListAction
 {
+    public function __construct(
+        private ProductRepository $productRepository,
+        private ListRepository $listRepository,
+    ) {}
     public function execute(ListStoreRequest $request)
     {
         $user = Auth::user();
 
-        if ($user->type !== 'client') {
-            return response([
-                'message' => 'Apenas clientes podem criar listas.',
-            ], 403);
-        }
-
         $list = DB::transaction(function () use ($request, $user) {
-            $list = ItensList::create([
-                'user_id' => $user->id,
-                'name' => $request->name,
-                'favorite' => false,
-                'total' => 0,
-            ]);
+            $list = $this->listRepository->createForUser($user, $request->validated());
 
             $productsWithQuantities = [];
             $productIds = array_column(array_column($request->products, 'product'), 'id');
@@ -36,10 +31,10 @@ class StoreListAction
                 $productsWithQuantities[$product['product']['id']] = ['quantity' => $product['quantity']];
             }
 
-            $list->products()->attach($productsWithQuantities);
-            Product::whereIn('id', $productIds)->increment('listAdded');
+            $this->listRepository->attachProducts($list, $productsWithQuantities);
+            $this->productRepository->incrementListAdded($productIds);
 
-            return $list->load(['products', 'listProducts.product.unity', 'listProducts.product.category']);
+            return $list;
         });
 
         return response([

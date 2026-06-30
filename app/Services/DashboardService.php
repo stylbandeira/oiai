@@ -6,11 +6,16 @@ use App\Models\Company;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\UserAddedProducts;
+use App\Repositories\UserRepository;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Log;
 
 class DashboardService
 {
+    public function __construct(
+        private UserRepository $userRepository
+    ) {}
+
     public function getSystemStats(): array
     {
         return [
@@ -23,9 +28,7 @@ class DashboardService
 
     public function getTopUsers(int $limit = 3): Collection
     {
-        return User::orderBy('points', 'desc')
-            ->take($limit)
-            ->get(['id', 'name', 'points', 'reputation']);
+        return $this->userRepository->getTopUsers($limit);
     }
 
     /**

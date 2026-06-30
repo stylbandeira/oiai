@@ -7,6 +7,7 @@ use App\Actions\CompanyOwners\RequestCompanyAccessAction;
 use App\Actions\CompanyOwners\StoreCompanyAndRequestAction;
 use App\Http\Requests\CompanyOwners\StoreCompanyAndRequestRequest;
 use App\Models\Company;
+use App\Models\CompanyOwners;
 use Illuminate\Http\Request;
 
 class CompanyOwnersController extends Controller
@@ -19,6 +20,7 @@ class CompanyOwnersController extends Controller
      */
     public function index(Request $request, IndexCompanyOwnersAction $action)
     {
+        $this->authorize('viewAny', CompanyOwners::class);
         return $action->execute($request);
     }
 
@@ -31,6 +33,7 @@ class CompanyOwnersController extends Controller
      */
     public function requestAccess(Request $request, Company $company, RequestCompanyAccessAction $action)
     {
+        $this->authorize('create', CompanyOwners::class);
         return $action->execute($request, $company);
     }
 
@@ -42,6 +45,7 @@ class CompanyOwnersController extends Controller
      */
     public function storeCompanyAndRequest(StoreCompanyAndRequestRequest $request, StoreCompanyAndRequestAction $action)
     {
+        $this->authorize('create', CompanyOwners::class);
         return $action->execute($request);
     }
 }

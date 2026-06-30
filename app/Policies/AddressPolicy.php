@@ -41,9 +41,10 @@ class AddressPolicy
      */
     public function create(User $user)
     {
-        if ($user->type === 'admin' || $user->type === 'company') {
+        if ($user->isAdmin() || $user->isCompany()) {
             return true;
         }
+        return false;
     }
 
     /**
@@ -55,9 +56,11 @@ class AddressPolicy
      */
     public function update(User $user, Address $address)
     {
-        if ($user->type === 'admin') {
+        if ($user->isAdmin()) {
             return true;
         }
+
+        return false;
     }
 
     /**
@@ -69,9 +72,11 @@ class AddressPolicy
      */
     public function delete(User $user, Address $address)
     {
-        if ($user->type === 'admin') {
+        if ($user->isAdmin()) {
             return true;
         }
+
+        return false;
     }
 
     /**
@@ -83,9 +88,10 @@ class AddressPolicy
      */
     public function restore(User $user, Address $address)
     {
-        if ($user->type === 'admin') {
+        if ($user->isAdmin()) {
             return true;
         }
+        return false;
     }
 
     /**
@@ -97,8 +103,10 @@ class AddressPolicy
      */
     public function forceDelete(User $user, Address $address)
     {
-        if ($user->type === 'admin') {
+        if ($user->isAdmin()) {
             return true;
         }
+
+        return false;
     }
 }

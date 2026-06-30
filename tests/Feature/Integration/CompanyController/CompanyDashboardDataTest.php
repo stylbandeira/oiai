@@ -52,10 +52,7 @@ class CompanyDashboardDataTest extends TestCase
             ->getJson('/api/companies/' . $company->id . '/dashboard');
 
         $response
-            ->assertStatus(403)
-            ->assertJsonFragment([
-                'error' => "User don't have access to this company",
-            ]);
+            ->assertStatus(403);
     }
 
     public function test_pending_owner_cant_see_company_dashboard_data(): void
@@ -73,9 +70,6 @@ class CompanyDashboardDataTest extends TestCase
             ->getJson('/api/companies/' . $company->id . '/dashboard');
 
         $response
-            ->assertStatus(403)
-            ->assertJsonFragment([
-                'error' => "User don't have access to this company",
-            ]);
+            ->assertStatus(403);
     }
 }

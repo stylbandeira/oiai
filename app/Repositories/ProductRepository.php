@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class ProductRepository
 {
@@ -21,31 +22,24 @@ class ProductRepository
         return $this->product->all();
     }
 
-    /**
-     * Returns a list of products
-     *
-     * @param string $search
-     * @param array $with
-     * @return Product
-     */
-    public function list(User $user, Request $request, array $with)
+    public function list(User $user, array $data)
     {
-        $query = $this->product->with($with);
+        $query = $this->product->with(['category', 'unity', 'companies']);
 
-        if ($request->has('search')) {
-            $searchTerm = '%' . $request->search . '%';
+        if (isset($data['search'])) {
+            $searchTerm = '%' . $data['search'] . '%';
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('name', 'like', $searchTerm)
                     ->orWhere('sku', 'like', $searchTerm);
             });
         }
 
-        if ($request->has('validated') && !$user->isClient()) {
-            if ($request->validated === 'pendentes') {
+        if (isset($data['validated']) && !$user->isClient()) {
+            if ($data['validated'] === 'pendentes') {
                 $query->where('validated', false);
             }
 
-            if ($request->validated === 'validados') {
+            if ($data['validated'] === 'validados') {
                 $query->where('validated', true);
             }
         }
@@ -65,6 +59,11 @@ class ProductRepository
             ->limit(1500);
     }
 
+    public function paginate(User $user, array $data)
+    {
+        return $this->list($user, $data)->paginate($filters['paginate'] ?? 15);
+    }
+
     public function find($id)
     {
         return $this->product->findOrFail($id);
@@ -82,8 +81,38 @@ class ProductRepository
         return $record;
     }
 
+    public function validateProducts(array $productIds, int $userId): Collection
+    {
+        try {
+            Product::whereIn('id', $productIds)
+                ->where('validated', false)
+                ->whereNull('validated_by')
+                ->whereNotNull('created_by')
+                ->update([
+                    'validated' => true,
+                    'validated_by' => $userId,
+                ]);
+            $validatedProducts = Product::whereIn('id', $productIds)->get();
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+
+        return $validatedProducts;
+    }
+
     public function delete($id)
     {
-        return $this->product->destroy($id);
+        $product = $this->find($id);
+        return $product->delete();
+    }
+
+    public function incrementListAdded(array $productsIds)
+    {
+        $this->product->whereIn('id', $productsIds)->increment('listAdded');
+    }
+
+    public function loadDefaultRelations(Product $product)
+    {
+        $product->with(['category', 'unity', 'companies']);
     }
 }

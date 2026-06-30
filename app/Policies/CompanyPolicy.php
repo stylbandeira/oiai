@@ -30,15 +30,15 @@ class CompanyPolicy
      */
     public function view(User $user, Company $company)
     {
-        if ($user->type === 'admin') {
+        if ($user->isAdmin()) {
             return true;
         }
 
-        if ($user->type === 'company') {
-            return $this->isOwner($user, $company) && $company->isActive();
+        if ($user->isCompany()) {
+            return $user->ownsActiveCompany($company)
+                && $company->isActive();
         }
 
-        //TO-DO verificar se um cliente vai poder acessar tudo por conta disso, ou sei lá...
         return true;
     }
 
@@ -64,7 +64,7 @@ class CompanyPolicy
      */
     public function update(User $user, Company $company)
     {
-        if ($user->type === 'admin') {
+        if ($user->isAdmin()) {
             return true;
         }
     }
@@ -78,7 +78,7 @@ class CompanyPolicy
      */
     public function delete(User $user, Company $company)
     {
-        if ($user->type === 'admin') {
+        if ($user->isAdmin()) {
             return true;
         }
     }
@@ -105,10 +105,5 @@ class CompanyPolicy
     public function forceDelete(User $user, Company $company)
     {
         //
-    }
-
-    protected function isOwner(User $user, Company $company)
-    {
-        return $company->owners->contains('id', $user->id);
     }
 }

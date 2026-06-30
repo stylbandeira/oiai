@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
+use Illuminate\Support\Facades\Log;
 
 class UsersPolicy
 {
@@ -17,7 +18,7 @@ class UsersPolicy
      */
     public function viewAny(User $user)
     {
-        if ($user->type === 'admin') {
+        if ($user->isAdmin()) {
             return true;
         }
         return false;
@@ -40,6 +41,15 @@ class UsersPolicy
         return false;
     }
 
+    public function dashboardData(User $user)
+    {
+        Log::alert('AAAAA');
+        if (!$user->isClient()) {
+            return false;
+        }
+        return true;
+    }
+
     /**
      * Determine whether the user can create models.
      *
@@ -48,7 +58,7 @@ class UsersPolicy
      */
     public function create(User $user)
     {
-        if ($user->type === 'admin') {
+        if ($user->isAdmin()) {
             return true;
         }
     }
@@ -62,7 +72,7 @@ class UsersPolicy
      */
     public function update(User $user, User $affected)
     {
-        if ($user->type === 'admin' && $affected->type !== 'admin') {
+        if ($user->isAdmin() && !$affected->isAdmin()) {
             return true;
         }
     }
@@ -92,7 +102,7 @@ class UsersPolicy
      */
     public function restore(User $user, User $affected)
     {
-        if ($user->type === 'admin' && $affected->type !== 'admin') {
+        if ($user->isAdmin() && $affected->type !== 'admin') {
             return true;
         }
     }
@@ -106,7 +116,7 @@ class UsersPolicy
      */
     public function forceDelete(User $user, User $affected)
     {
-        if ($user->type === 'admin' && $affected->type !== 'admin') {
+        if ($user->isAdmin() && $affected->type !== 'admin') {
             return true;
         }
     }

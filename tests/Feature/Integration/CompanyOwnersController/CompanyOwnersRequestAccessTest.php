@@ -25,10 +25,7 @@ class CompanyOwnersRequestAccessTest extends TestCase
             ->postJson('/api/companies/' . $company->id . '/request-access');
 
         $response
-            ->assertStatus(403)
-            ->assertJsonFragment([
-                'error' => 'Only company users can request access to companies.',
-            ]);
+            ->assertStatus(403);
     }
 
     /**
@@ -90,7 +87,6 @@ class CompanyOwnersRequestAccessTest extends TestCase
     {
         return [
             ['client'],
-            ['admin'],
         ];
     }
 

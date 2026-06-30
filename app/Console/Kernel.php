@@ -20,7 +20,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         // Versão 1: Com log detalhado
-        $schedule->job(new ProcessInvoiceJob())
+        $schedule->job(app(ProcessInvoiceJob::class))
             ->everyMinute()
             ->before(function () {
                 Log::info('Antes de despachar ProcessInvoiceJob', [

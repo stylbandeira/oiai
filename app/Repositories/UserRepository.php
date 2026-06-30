@@ -44,6 +44,12 @@ class UserRepository
         return $this->model->findOrFail($id);
     }
 
+    public function findWithRelations(int $userId, array $relations)
+    {
+        return User::with($relations)
+            ->findOrFail($userId);
+    }
+
     public function create(array $data)
     {
         return $this->model->create($data);
@@ -115,5 +121,19 @@ class UserRepository
         }
 
         return $query;
+    }
+
+    public function getTopUsers(int $limit = 3)
+    {
+        return User::orderBy('points', 'desc')
+            ->take($limit)
+            ->get(['id', 'name', 'points', 'reputation']);
+    }
+
+    public function restore(User $user)
+    {
+        $user->restore();
+
+        return $user;
     }
 }

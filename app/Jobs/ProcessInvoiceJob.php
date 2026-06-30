@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Models\UserAddedProducts;
 use App\Repositories\EventRepository;
 use App\Repositories\UserRepository;
+use App\Services\NotificationService;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -31,7 +32,7 @@ class ProcessInvoiceJob implements ShouldQueue
      *
      * @return void
      */
-    public function __construct()
+    public function __construct(private NotificationService $notificationService)
     {
         $this->unities = Unity::all()->keyBy('abbreviation')->toArray();
     }
@@ -179,8 +180,7 @@ class ProcessInvoiceJob implements ShouldQueue
         $userRepo->addPoints($user->id, count($products_data));
 
         try {
-            $eventRepo = app(EventRepository::class);
-            $eventRepo->createProductInsertionEvent($user, count($products_data), $company);
+            $this->notificationService->createProductInsertionEvent($user, count($products_data), $company);
         } catch (\Throwable $th) {
             Log::alert('Problema com criação de evento de inserção de produtos');
         }

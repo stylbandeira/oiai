@@ -15,6 +15,7 @@ class ListProducts extends BaseModel
     ];
 
     public $fillable = [
+        'list_id',
         'product_id',
         'quantity'
     ];

@@ -24,7 +24,7 @@ class StoreUserService
 
             $user = User::create($data);
 
-            if ($user->type === 'company') {
+            if ($user->isCompany()) {
                 $this->companyOwnerService->sync($user, $companies, $approvedBy);
             }
 

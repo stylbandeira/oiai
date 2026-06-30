@@ -12,6 +12,7 @@ class EventController extends Controller
 {
     public function update(EventUpdateRequest $request, Event $event, UpdateEventAction $action)
     {
+        $this->authorize('update', $event);
         return $action->execute($request, $event);
     }
 

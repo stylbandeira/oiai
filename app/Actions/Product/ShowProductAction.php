@@ -5,20 +5,20 @@ namespace App\Actions\Product;
 use App\Http\Resources\AdminProductResource;
 use App\Http\Resources\ClientProductResource;
 use App\Models\Product;
+use App\Models\User;
+use App\Repositories\ProductRepository;
 use Illuminate\Support\Facades\Auth;
 
 class ShowProductAction
 {
-    public function execute(Product $product)
+    public function __construct(
+        private ProductRepository $product_repository,
+    ) {}
+
+    public function execute(Product $product): Product
     {
-        $user = Auth::user();
+        $this->product_repository->loadDefaultRelations($product);
 
-        $product->load(['category', 'unity', 'companies']);
-
-        if ($user->type === 'client') {
-            return new ClientProductResource($product);
-        }
-
-        return new AdminProductResource($product);
+        return $product;
     }
 }
