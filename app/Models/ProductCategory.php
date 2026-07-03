@@ -11,6 +11,9 @@ class ProductCategory extends BaseModel
     use HasFactory, SoftDeletes;
 
     protected $table = 'product_category';
+    protected $fillable = [
+        'name'
+    ];
 
     public function products()
     {
