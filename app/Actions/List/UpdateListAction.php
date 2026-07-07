@@ -21,9 +21,11 @@ class UpdateListAction
 
         $completedProductIds = $this->listRepository->getCompletedProductIds($list);
 
-        $this->listRepository->deleteIncompleteItems($list);
 
         if ($request->has('items')) {
+
+            $this->listRepository->deleteIncompleteItems($list);
+
             foreach ($request->validated()['items'] as $item) {
                 if (in_array($item['product_id'], $completedProductIds)) {
                     continue;
