@@ -8,16 +8,6 @@ class ListProducts extends BaseModel
 {
     use HasFactory;
 
-    const STATUS_LIST_ACTIVE = 'active';
-    const STATUS_LIST_COMPLETED = 'completed';
-    const STATUS_LIST_INACTIVE = 'inactive';
-
-    const VALID_STATUSES = [
-        self::STATUS_LIST_ACTIVE,
-        self::STATUS_LIST_COMPLETED,
-        self::STATUS_LIST_INACTIVE,
-    ];
-
     protected $table = 'list_products';
 
     protected $attributes = [

@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\List;
 
-use App\Models\ListProducts;
+use App\Models\ItensList;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -19,7 +19,7 @@ class ListUpdateRequest extends FormRequest
         return [
             'name' => 'sometimes|string',
             'favorite' => 'sometimes|boolean',
-            'status' => 'sometimes|string|in:' . json_encode(ListProducts::VALID_STATUSES),
+            'status' => 'sometimes|in:' . implode(',', ItensList::VALID_STATUSES),
             'items' => 'sometimes|array',
             'items.*.product_id' => 'required_with:items|integer|exists:products,id',
             'items.*.quantity' => 'required_with:items|numeric|min:0.01',

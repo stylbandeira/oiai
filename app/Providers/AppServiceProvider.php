@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Contracts\ListDataAssembler;
 use App\Services\ExportService;
+use App\Services\Lists\EloquentListDataAssembler;
 use App\Services\NFCeScraperService;
 use App\Services\NFCeXMLParserService;
 use Illuminate\Support\ServiceProvider;
@@ -16,6 +18,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
+        $this->app->bind(ListDataAssembler::class, EloquentListDataAssembler::class);
+
         $this->app->singleton(ExportService::class, function () {
             return new ExportService();
         });

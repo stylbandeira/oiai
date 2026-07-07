@@ -13,10 +13,11 @@ return new class extends Migration
     {
         Schema::create('completed_lists', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('list_id')->unique()->constrained('list')->cascadeOnDelete();
             $table->json('list_data');
             $table->string('version');
-            $table->float('total_price');
-            $table->date('completed_at');
+            $table->decimal('total_price', 12, 2);
+            $table->dateTime('completed_at');
             $table->timestamps();
         });
     }
