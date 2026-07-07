@@ -35,6 +35,13 @@ class ProductCategoryRepository
         return $record;
     }
 
+    public function firstOrNew(string $name)
+    {
+        ProductCategory::firstOrNew([
+            'name' => $name
+        ]);
+    }
+
     public function delete($id)
     {
         return $this->productCategory->destroy($id);
