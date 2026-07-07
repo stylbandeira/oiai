@@ -24,7 +24,7 @@ class EloquentListDataAssembler implements ListDataAssembler
             'name' => $list->name,
             'favorite' => (bool) $list->favorite,
             'status' => $list->status,
-            'total' => (float) $list->total,
+            'total' => $this->calculateTotal($list),
             'created_at' => $list->created_at,
             'companies' => [],
             'products' => ListProductResource::collection($list->listProducts)->resolve(),
@@ -54,5 +54,16 @@ class EloquentListDataAssembler implements ListDataAssembler
         }
 
         return $data;
+    }
+
+    private function calculateTotal(ItensList $list): float
+    {
+        return (float) $list->listProducts->sum(function ($listProduct) use ($list) {
+            $unitPrice = $list->optimized
+                ? $listProduct->companyProduct?->average_price
+                : $listProduct->product?->average_price;
+
+            return (float) $unitPrice * (float) $listProduct->quantity;
+        });
     }
 }
