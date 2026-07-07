@@ -2,11 +2,15 @@
 
 namespace Tests\Feature\Integration\ListController;
 
+use App\Jobs\AveragePriceJob;
+use App\Models\Company;
+use App\Models\CompanyProducts;
 use App\Models\CompletedList;
 use App\Models\ItensList;
 use App\Models\ListProducts;
 use App\Models\Product;
 use App\Models\User;
+use App\Models\UserAddedProducts;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -91,6 +95,32 @@ class CompletedListSnapshotTest extends TestCase
         $this->assertDatabaseCount('list_products', 1);
     }
 
+    public function test_completed_list_keeps_product_price_and_total_after_average_price_job(): void
+    {
+        [$user, $product, $completedList] = $this->createCompletedListAndRecalculateProductPrice();
+
+        $this->assertSame(40.0, $product->fresh()->average_price);
+
+        $this->actingAs($user)
+            ->getJson('/api/lists/' . $completedList->id)
+            ->assertOk()
+            ->assertJsonPath('list.products.0.average_price', 10)
+            ->assertJsonPath('list.total', 20);
+    }
+
+    public function test_new_list_uses_recalculated_product_price_and_total(): void
+    {
+        [$user, $product] = $this->createCompletedListAndRecalculateProductPrice();
+        $newList = $this->createList($user, 'Lista posterior ao reajuste');
+        $this->addProductToList($newList, $product, 2);
+
+        $this->actingAs($user)
+            ->getJson('/api/lists/' . $newList->id)
+            ->assertOk()
+            ->assertJsonPath('list.products.0.average_price', 40)
+            ->assertJsonPath('list.total', 80);
+    }
+
     private function createListWithProduct(): array
     {
         $user = User::factory()->client()->create();
@@ -110,5 +140,65 @@ class CompletedListSnapshotTest extends TestCase
         ]));
 
         return [$user, $list, $product];
+    }
+
+    private function createCompletedListAndRecalculateProductPrice(): array
+    {
+        $user = User::factory()->client()->create();
+        $product = Product::factory()->create([
+            'name' => 'Arroz',
+            'average_price' => 10,
+        ]);
+        $completedList = $this->createList($user, 'Compra concluída');
+        $this->addProductToList($completedList, $product, 2);
+
+        $this->actingAs($user)
+            ->putJson('/api/lists/' . $completedList->id, [
+                'status' => ItensList::STATUS_COMPLETED,
+            ])
+            ->assertOk();
+
+        $company = Company::factory()->create();
+        $companyProduct = CompanyProducts::create([
+            'company_id' => $company->id,
+            'product_id' => $product->id,
+            'average_price' => 10,
+        ]);
+
+        foreach ([30, 50] as $price) {
+            UserAddedProducts::unguarded(fn () => UserAddedProducts::create([
+                'user_id' => $user->id,
+                'company_id' => $company->id,
+                'product_id' => $product->id,
+                'company_product_id' => $companyProduct->id,
+                'price' => $price,
+                'processed' => false,
+                'purchase_date' => now(),
+            ]));
+        }
+
+        (new AveragePriceJob)->handle();
+
+        return [$user, $product, $completedList];
+    }
+
+    private function createList(User $user, string $name): ItensList
+    {
+        return ItensList::create([
+            'user_id' => $user->id,
+            'name' => $name,
+            'favorite' => false,
+            'total' => 0,
+        ]);
+    }
+
+    private function addProductToList(ItensList $list, Product $product, int $quantity): void
+    {
+        ListProducts::unguarded(fn () => ListProducts::create([
+            'list_id' => $list->id,
+            'product_id' => $product->id,
+            'quantity' => $quantity,
+            'completed' => false,
+        ]));
     }
 }
