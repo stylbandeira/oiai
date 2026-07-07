@@ -8,7 +8,6 @@ use App\Repositories\ProductCategoryRepository;
 use App\Services\Product\ProductDataService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Support\Facades\Log;
 
 class ProductDataSearchJob implements ShouldQueue
 {
@@ -27,18 +26,10 @@ class ProductDataSearchJob implements ShouldQueue
      */
     public function handle(): void
     {
-
-        Log::info('Limit Cosmos', [
-            'env' => env('COSMOS_API_DAILY_PRODUCT_COUNT'),
-            'config' => config('services.cosmos.daily_product_count'),
-        ]);
-
         $products = Product::where('refined', 0)
             ->whereNotNull('ean')
             ->limit(env('COSMOS_API_DAILY_PRODUCT_COUNT'))
             ->get();
-
-        Log::alert($products);
 
         foreach ($products as $product) {
             $productData = $this->product_data_service->getProductData($product->ean);
@@ -46,10 +37,6 @@ class ProductDataSearchJob implements ShouldQueue
             if (!count($productData)) {
                 continue;
             }
-
-            Log::alert([
-                'Product Data' => $productData
-            ]);
 
             $img = '';
 
