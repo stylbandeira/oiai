@@ -8,6 +8,16 @@ class ItensList extends BaseModel
 {
     use HasFactory;
 
+    public const STATUS_ACTIVE = 'active';
+    public const STATUS_COMPLETED = 'completed';
+    public const STATUS_INACTIVE = 'inactive';
+
+    public const VALID_STATUSES = [
+        self::STATUS_ACTIVE,
+        self::STATUS_COMPLETED,
+        self::STATUS_INACTIVE,
+    ];
+
     protected $table = "list";
 
     public $fillable = [
@@ -27,5 +37,10 @@ class ItensList extends BaseModel
     public function listProducts()
     {
         return $this->hasMany(ListProducts::class, 'list_id');
+    }
+
+    public function completedSnapshot()
+    {
+        return $this->hasOne(CompletedList::class, 'list_id');
     }
 }

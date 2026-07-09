@@ -51,8 +51,6 @@ class ListController extends Controller
      */
     public function show(ItensList $list, ShowListAction $action)
     {
-        Log::alert($action->execute($list));
-
         return $action->execute($list);
     }
 
