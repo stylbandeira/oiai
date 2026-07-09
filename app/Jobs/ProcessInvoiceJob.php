@@ -13,6 +13,7 @@ use App\Models\UserAddedProducts;
 use App\Repositories\EventRepository;
 use App\Repositories\UserRepository;
 use App\Services\NotificationService;
+use App\Services\NFCeScraperService;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -45,7 +46,6 @@ class ProcessInvoiceJob implements ShouldQueue
     public function processPendingInvoices()
     {
         $invoices = Invoice::where('created_at', '>=', now()->subMonth())
-            ->where('invoice_data', '!=', null)
             ->where('pending', 1)
             ->get();
 
@@ -61,8 +61,12 @@ class ProcessInvoiceJob implements ShouldQueue
      */
     public function processInvoice(Invoice $invoice)
     {
+        if (!$this->ensureInvoiceData($invoice)) {
+            return;
+        }
+
         $user_inserted_products = [];
-        $invoice_data = json_decode($invoice->invoice_data);
+        $invoice_data = $this->normalizeInvoiceData(json_decode($invoice->invoice_data));
 
         $products_data = $invoice_data->produtos;
         $user = User::find($invoice->user_id);
@@ -138,6 +142,7 @@ class ProcessInvoiceJob implements ShouldQueue
                     );
 
                     try {
+                        $purchase_date = Carbon::now();
                         $dataBruta = $invoice_data->dados_nota->data_emissao; // "24/03/2026 20:14:32-03:00"
 
                         $purchase_date = Carbon::createFromFormat('d/m/Y H:i:sP', $dataBruta);
@@ -186,6 +191,79 @@ class ProcessInvoiceJob implements ShouldQueue
 
         $invoice->pending = false;
         $invoice->save();
+    }
+
+    private function ensureInvoiceData(Invoice $invoice): bool
+    {
+        if ($invoice->invoice_data) {
+            return true;
+        }
+
+        $result = app(NFCeScraperService::class)->scrapeFromQRCode($invoice->access_key);
+
+        if (($result['status'] ?? null) === 'error') {
+            Log::warning('Não foi possível validar/processar NFCe pendente', [
+                'invoice_id' => $invoice->id,
+                'access_key' => $invoice->access_key,
+                'error' => $result['error'] ?? null,
+            ]);
+
+            return false;
+        }
+
+        $invoiceData = $result['data'] ?? $result;
+
+        if (empty($invoiceData['emitente']) || empty($invoiceData['produtos'])) {
+            Log::warning('Dados insuficientes ao validar/processar NFCe pendente', [
+                'invoice_id' => $invoice->id,
+                'access_key' => $invoice->access_key,
+            ]);
+
+            return false;
+        }
+
+        if (!isset($invoiceData['dados_nota']) && isset($invoiceData['nota'])) {
+            $invoiceData['dados_nota'] = $invoiceData['nota'];
+        }
+
+        $invoice->invoice_data = json_encode($invoiceData);
+        $invoice->receipt_data = $this->resolveReceiptDate($invoiceData);
+        $invoice->save();
+
+        return true;
+    }
+
+    private function normalizeInvoiceData(object $invoiceData): object
+    {
+        if (!isset($invoiceData->dados_nota) && isset($invoiceData->nota)) {
+            $invoiceData->dados_nota = $invoiceData->nota;
+        }
+
+        return $invoiceData;
+    }
+
+    private function resolveReceiptDate(array $invoiceData): Carbon
+    {
+        $date = $invoiceData['protocolo']['data_recebimento']
+            ?? $invoiceData['dados_nota']['data_emissao']
+            ?? $invoiceData['nota']['data_emissao']
+            ?? null;
+
+        if (!$date) {
+            return Carbon::today();
+        }
+
+        try {
+            $normalizedDate = explode('-', $date)[0];
+
+            return Carbon::createFromFormat('d/m/Y H:i:s', trim($normalizedDate));
+        } catch (\Throwable) {
+            try {
+                return Carbon::parse($date);
+            } catch (\Throwable) {
+                return Carbon::today();
+            }
+        }
     }
 
     public function failed(\Throwable $exception): void

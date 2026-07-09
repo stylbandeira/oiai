@@ -23,14 +23,15 @@ class InvoiceController extends Controller
     }
 
     /**
-     * Processa o QRCode usando scrapper para obter um JSON com os dados da nota fiscal
-     *
-     * @param ProcessInvoiceRequest $request
-     * @return void
+     * Cadastra a chave da NFCe para processamento assíncrono.
      */
     public function processInvoice(ProcessInvoiceRequest $request, ProcessInvoiceAction $action)
     {
-        if ($request->invoice_code && !$this->invoice_service->isValid($request->invoice_code)) {
+        $accessKey = $this->invoice_service->extractAccessKey(
+            $request->input('invoice_code') ?? $request->input('qr_code_data')
+        );
+
+        if (!$accessKey || !$this->invoice_service->isValid($accessKey)) {
             return response([
                 'message' => 'Código de NFCe ainda não suportado.'
             ], 400);

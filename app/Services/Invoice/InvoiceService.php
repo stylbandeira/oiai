@@ -8,7 +8,17 @@ class InvoiceService
 {
     public function isValid(string $invoiceCode): bool
     {
-        return $this->areaIsValid($invoiceCode);
+        return preg_match('/^\d{44}$/', $invoiceCode) === 1
+            && $this->areaIsValid($invoiceCode);
+    }
+
+    public function extractAccessKey(string $invoiceCode): ?string
+    {
+        if (preg_match('/\d{44}/', $invoiceCode, $matches) !== 1) {
+            return null;
+        }
+
+        return $matches[0];
     }
 
     public function areaIsValid(string $invoiceCode): bool
