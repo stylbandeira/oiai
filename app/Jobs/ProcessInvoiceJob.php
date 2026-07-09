@@ -141,8 +141,6 @@ class ProcessInvoiceJob implements ShouldQueue
                         $dataBruta = $invoice_data->dados_nota->data_emissao; // "24/03/2026 20:14:32-03:00"
 
                         $purchase_date = Carbon::createFromFormat('d/m/Y H:i:sP', $dataBruta);
-
-                        Log::alert('SUCESSO: ' . $purchase_date);
                     } catch (\Exception $e) {
                         Log::alert('ERRO: ' . $e->getMessage());
                     }

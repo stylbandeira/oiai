@@ -43,7 +43,6 @@ class UsersPolicy
 
     public function dashboardData(User $user)
     {
-        Log::alert('AAAAA');
         if (!$user->isClient()) {
             return false;
         }
