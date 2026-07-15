@@ -8,6 +8,7 @@ use App\Actions\List\OptimizeListAction;
 use App\Actions\List\ShowListAction;
 use App\Actions\List\StoreListAction;
 use App\Actions\List\UpdateListAction;
+use App\Http\Requests\List\ListOptimizeRequest;
 use App\Http\Requests\List\ListStoreRequest;
 use App\Http\Requests\List\ListUpdateRequest;
 use App\Models\ItensList;
@@ -54,9 +55,20 @@ class ListController extends Controller
         return $action->execute($list);
     }
 
-    public function optimize(ItensList $list, OptimizeListAction $action)
+    public function optimize(ListOptimizeRequest $request, ItensList $list, OptimizeListAction $action)
     {
-        return $action->execute($list);
+        if ($request->has('latitude') && $request->has('longitude')) {
+            $list->latitude = $request->latitude;
+            $list->longitude = $request->longitude;
+            $list->save();
+            $list->fresh();
+        }
+
+        $optimizedList = $action->execute($list->id);
+
+        return response([
+            'list' => $optimizedList,
+        ]);
     }
 
     /**
