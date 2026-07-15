@@ -19,6 +19,8 @@ class AddressFactory extends Factory
     {
         return [
             'country' => fake()->country(),
+            'city' => fake()->city(),
+            'street' => fake()->streetName(),
             'area' => fake()->name(),
             'number' => fake()->numberBetween(),
             'complement' => Str::random(1),
