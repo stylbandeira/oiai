@@ -85,7 +85,7 @@ class ListRepository
         $list->load([
             'listProducts.product.unity',
             'listProducts.product.category',
-            'listProducts.companyProduct.company',
+            'listProducts.companyProduct.company.address',
         ]);
     }
 

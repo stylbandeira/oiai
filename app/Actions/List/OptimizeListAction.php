@@ -5,10 +5,11 @@ namespace App\Actions\List;
 use App\Http\Resources\ClientProductResource;
 use App\Models\CompanyProducts;
 use App\Models\ItensList;
-use App\Models\ListProducts;
 use App\Repositories\CompanyProductsRepository;
 use App\Repositories\ListProductsRepository;
 use App\Repositories\ListRepository;
+use App\Services\Geolocation\GeolocationService;
+use Illuminate\Support\Collection;
 
 class OptimizeListAction
 {
@@ -16,22 +17,18 @@ class OptimizeListAction
         private CompanyProductsRepository $companyProductsRepository,
         private ListProductsRepository $listProductsRepository,
         private ListRepository $listRepository,
+        private GeolocationService $geolocationService,
     ) {}
-    public function execute(ItensList $list)
+    public function execute(string $list_id)
     {
-        $list->load('products');
+        $list = ItensList::with('products')->find($list_id);
 
         $optimizedList = [];
 
         $companyProducts = $this->companyProductsRepository->getByProductIdsWithPivots($list->products->pluck('id')->toArray());
 
         $cheapest = $companyProducts->groupBy('product_id')
-            ->map(function ($items) {
-                return $items
-                    ->filter(fn ($item) => $item->average_price !== null && (float) $item->average_price > 0)
-                    ->sortBy(fn ($item) => (float) $item->average_price)
-                    ->first();
-            })
+            ->map(fn(Collection $items) => $this->selectBestOffer($items, $list))
             ->filter();
 
         foreach ($cheapest as $cheap) {
@@ -47,8 +44,50 @@ class OptimizeListAction
 
         $this->listRepository->update($list->id, ['optimized' => true]);
 
-        return response([
-            'list' => $optimizedList,
+        return $optimizedList;
+    }
+
+    private function selectBestOffer(Collection $offers, ItensList $list): ?CompanyProducts
+    {
+        $validOffers = $offers
+            ->filter(
+                fn(CompanyProducts $offer) => $offer->average_price !== null
+                    && (float) $offer->average_price > 0
+            );
+
+        if ($validOffers->isEmpty()) {
+            return null;
+        }
+
+        if (
+            $list->distance !== null
+            && $list->latitude !== null
+            && $list->longitude !== null
+        ) {
+            $offersWithinDistance = $validOffers->filter(
+                fn(CompanyProducts $offer) => $this->isWithinDistance($offer, $list)
+            );
+
+            if ($offersWithinDistance->isNotEmpty()) {
+                $validOffers = $offersWithinDistance;
+            }
+        }
+
+        return $validOffers
+            ->sortBy(fn(CompanyProducts $offer) => (float) $offer->average_price)
+            ->first();
+    }
+
+    private function isWithinDistance(CompanyProducts $offer, ItensList $list): bool
+    {
+        $distance = $this->geolocationService->between([
+            'latitude' => $offer->company?->address?->latitude,
+            'longitude' => $offer->company?->address?->longitude,
+        ], [
+            'latitude' => $list->latitude,
+            'longitude' => $list->longitude,
         ]);
+
+        return $distance !== null && $distance <= (float) $list->distance;
     }
 }

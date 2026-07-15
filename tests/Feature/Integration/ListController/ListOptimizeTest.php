@@ -3,6 +3,7 @@
 namespace Tests\Feature\Integration\ListController;
 
 use App\Jobs\AveragePriceJob;
+use App\Models\Address;
 use App\Models\Company;
 use App\Models\CompanyProducts;
 use App\Models\ItensList;
@@ -139,6 +140,58 @@ class ListOptimizeTest extends TestCase
         ]);
     }
 
+    public function test_company_within_maximum_distance_is_prioritized_even_when_more_expensive(): void
+    {
+        $user = User::factory()->client()->create();
+        $list = $this->createList($user);
+        $product = Product::factory()->create(['average_price' => 25]);
+        $this->createListProduct($list, $product, 1);
+
+        $nearCompany = $this->createCompanyAt(-8.057562, -34.877001);
+        $farCompany = $this->createCompanyAt(-10.047562, -34.877001);
+
+        $nearOffer = CompanyProducts::create([
+            'company_id' => $nearCompany->id,
+            'product_id' => $product->id,
+            'average_price' => 20,
+        ]);
+        $farOffer = CompanyProducts::create([
+            'company_id' => $farCompany->id,
+            'product_id' => $product->id,
+            'average_price' => 10,
+        ]);
+
+        $this->actingAs($user)
+            ->postJson('/api/lists/' . $list->id . '/optimize', [
+                'latitude' => -8.047562,
+                'longitude' => -34.877001,
+                'distance' => 100,
+            ])
+            ->assertOk();
+
+        $this->assertDatabaseHas('list_products', [
+            'list_id' => $list->id,
+            'product_id' => $product->id,
+            'company_product_id' => $nearOffer->id,
+        ]);
+        $this->assertDatabaseMissing('list_products', [
+            'list_id' => $list->id,
+            'product_id' => $product->id,
+            'company_product_id' => $farOffer->id,
+        ]);
+
+        $companies = array_values(
+            $this->actingAs($user)
+                ->getJson('/api/lists/' . $list->id)
+                ->assertOk()
+                ->json('list.companies')
+        );
+
+        $this->assertSame($nearCompany->id, $companies[0]['company']['id']);
+        $this->assertFalse($companies[0]['isTooFar']);
+        $this->assertEquals(20.0, $companies[0]['products'][0]['average_price']);
+    }
+
     public function test_calculates_and_optimizes_a_twenty_product_shopping_list(): void
     {
         Log::spy();
@@ -174,11 +227,13 @@ class ListOptimizeTest extends TestCase
                 'average_price' => 0,
             ]);
 
-            foreach ([
-                [$cheapCompany, $cheapCompanyProduct, $cheapPrice],
-                [$expensiveCompany, $expensiveCompanyProduct, $expensivePrice],
-            ] as [$company, $companyProduct, $price]) {
-                UserAddedProducts::unguarded(fn () => UserAddedProducts::create([
+            foreach (
+                [
+                    [$cheapCompany, $cheapCompanyProduct, $cheapPrice],
+                    [$expensiveCompany, $expensiveCompanyProduct, $expensivePrice],
+                ] as [$company, $companyProduct, $price]
+            ) {
+                UserAddedProducts::unguarded(fn() => UserAddedProducts::create([
                     'user_id' => $user->id,
                     'company_id' => $company->id,
                     'product_id' => $product->id,
@@ -218,7 +273,7 @@ class ListOptimizeTest extends TestCase
             ->json('list');
 
         $regularTotal = collect($regularList['products'])->sum(
-            fn (array $product) => $product['average_price'] * $product['quantity'],
+            fn(array $product) => $product['average_price'] * $product['quantity'],
         );
         $this->assertEqualsWithDelta(998.0, $regularTotal, 0.001);
 
@@ -261,6 +316,94 @@ class ListOptimizeTest extends TestCase
         $this->assertLessThan($regularTotal, $optimizedTotal);
     }
 
+    public function test_optimize_list_with_lat_long(): void
+    {
+        $user = User::factory()->client()->create();
+        $list = $this->createList($user);
+        $product = Product::factory()->create(['average_price' => 15]);
+        $this->createListProduct($list, $product, 1);
+
+        $cheapCompanyProduct = $this->createCompanyProduct($product, 10);
+
+        $this->actingAs($user)
+            ->postJson('/api/lists/' . $list->id . '/optimize', [
+                'latitude' => -9.391309,
+                'longitude' => -40.524186
+            ])
+            ->assertOk();
+
+        $this->actingAs($user)
+            ->get('/api/lists/' . $list->id)
+            ->assertJsonFragment(["distance" => 1528.792])
+            ->assertOk();
+
+        $this->assertDatabaseHas('list_products', [
+            'list_id' => $list->id,
+            'product_id' => $product->id,
+            'company_product_id' => $cheapCompanyProduct->id,
+        ]);
+    }
+
+    public function test_optimized_list_companies_are_ordered_from_nearest_to_farthest(): void
+    {
+        $user = User::factory()->client()->create();
+        $list = $this->createList($user);
+
+        $origin = [
+            'latitude' => -8.047562,
+            'longitude' => -34.877001,
+            'distance' => 100,
+        ];
+
+        $farCompany = $this->createCompanyAt(-10.047562, -34.877001);
+        $nearCompany = $this->createCompanyAt(-8.057562, -34.877001);
+        $middleCompany = $this->createCompanyAt(-8.547562, -34.877001);
+        $companyWithoutCoordinates = Company::factory()->create();
+
+        foreach ([$farCompany, $companyWithoutCoordinates, $nearCompany, $middleCompany] as $company) {
+            $product = Product::factory()->create(['average_price' => 15]);
+            $this->createListProduct($list, $product, 1);
+
+            CompanyProducts::create([
+                'company_id' => $company->id,
+                'product_id' => $product->id,
+                'average_price' => 10,
+            ]);
+        }
+
+        $this->actingAs($user)
+            ->postJson('/api/lists/' . $list->id . '/optimize', $origin)
+            ->assertOk();
+
+        $companies = array_values(
+            $this->actingAs($user)
+                ->getJson('/api/lists/' . $list->id)
+                ->assertOk()
+                ->json('list.companies')
+        );
+
+        $this->assertSame(
+            [
+                $nearCompany->id,
+                $middleCompany->id,
+                $farCompany->id,
+                $companyWithoutCoordinates->id,
+            ],
+            array_column(array_column($companies, 'company'), 'id'),
+        );
+
+        $distances = array_column($companies, 'distance');
+
+        $this->assertCount(4, $distances);
+        $this->assertLessThan($distances[1], $distances[0]);
+        $this->assertLessThan($distances[2], $distances[1]);
+        $this->assertNull($distances[3]);
+        $this->assertSame(
+            [false, false, true, true],
+            array_column($companies, 'isTooFar'),
+        );
+    }
+
     private function createList(User $user): ItensList
     {
         return ItensList::create([
@@ -284,10 +427,32 @@ class ListOptimizeTest extends TestCase
     {
         $company = Company::factory()->create();
 
+        $address = Address::factory()->create([
+            'latitude' => -22.847182,
+            'longitude' => -43.47096
+        ]);
+
+        $company->address_id = $address->id;
+        $company->save();
+
         return CompanyProducts::create([
             'company_id' => $company->id,
             'product_id' => $product->id,
             'average_price' => $price,
         ]);
+    }
+
+    private function createCompanyAt(float $latitude, float $longitude): Company
+    {
+        $address = Address::factory()->create([
+            'latitude' => $latitude,
+            'longitude' => $longitude,
+        ]);
+
+        $company = Company::factory()->create([
+            'address_id' => $address->id,
+        ]);
+
+        return $company;
     }
 }

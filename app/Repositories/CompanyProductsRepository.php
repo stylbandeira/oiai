@@ -32,7 +32,7 @@ class CompanyProductsRepository
     {
         return $this->model
             ->whereIn('product_id', $productIds)
-            ->with(['product', 'company'])
+            ->with(['product', 'company.address'])
             ->get();
     }
 
