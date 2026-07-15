@@ -3,6 +3,7 @@
 namespace Tests\Feature\Integration\ListController;
 
 use App\Jobs\AveragePriceJob;
+use App\Models\Address;
 use App\Models\Company;
 use App\Models\CompanyProducts;
 use App\Models\ItensList;
@@ -174,11 +175,13 @@ class ListOptimizeTest extends TestCase
                 'average_price' => 0,
             ]);
 
-            foreach ([
-                [$cheapCompany, $cheapCompanyProduct, $cheapPrice],
-                [$expensiveCompany, $expensiveCompanyProduct, $expensivePrice],
-            ] as [$company, $companyProduct, $price]) {
-                UserAddedProducts::unguarded(fn () => UserAddedProducts::create([
+            foreach (
+                [
+                    [$cheapCompany, $cheapCompanyProduct, $cheapPrice],
+                    [$expensiveCompany, $expensiveCompanyProduct, $expensivePrice],
+                ] as [$company, $companyProduct, $price]
+            ) {
+                UserAddedProducts::unguarded(fn() => UserAddedProducts::create([
                     'user_id' => $user->id,
                     'company_id' => $company->id,
                     'product_id' => $product->id,
@@ -218,7 +221,7 @@ class ListOptimizeTest extends TestCase
             ->json('list');
 
         $regularTotal = collect($regularList['products'])->sum(
-            fn (array $product) => $product['average_price'] * $product['quantity'],
+            fn(array $product) => $product['average_price'] * $product['quantity'],
         );
         $this->assertEqualsWithDelta(998.0, $regularTotal, 0.001);
 
@@ -261,6 +264,34 @@ class ListOptimizeTest extends TestCase
         $this->assertLessThan($regularTotal, $optimizedTotal);
     }
 
+    public function test_optimize_list_with_lat_long(): void
+    {
+        $user = User::factory()->client()->create();
+        $list = $this->createList($user);
+        $product = Product::factory()->create(['average_price' => 15]);
+        $this->createListProduct($list, $product, 1);
+
+        $cheapCompanyProduct = $this->createCompanyProduct($product, 10);
+
+        $this->actingAs($user)
+            ->postJson('/api/lists/' . $list->id . '/optimize', [
+                'latitude' => -9.391309,
+                'longitude' => -40.524186
+            ])
+            ->assertOk();
+
+        $this->actingAs($user)
+            ->get('/api/lists/' . $list->id)
+            ->assertJsonFragment(["distance" => 1528.792])
+            ->assertOk();
+
+        $this->assertDatabaseHas('list_products', [
+            'list_id' => $list->id,
+            'product_id' => $product->id,
+            'company_product_id' => $cheapCompanyProduct->id,
+        ]);
+    }
+
     private function createList(User $user): ItensList
     {
         return ItensList::create([
@@ -283,6 +314,14 @@ class ListOptimizeTest extends TestCase
     private function createCompanyProduct(Product $product, float $price): CompanyProducts
     {
         $company = Company::factory()->create();
+
+        $address = Address::factory()->create([
+            'latitude' => -22.847182,
+            'longitude' => -43.47096
+        ]);
+
+        $company->address_id = $address->id;
+        $company->save();
 
         return CompanyProducts::create([
             'company_id' => $company->id,
