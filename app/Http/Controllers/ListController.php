@@ -57,11 +57,15 @@ class ListController extends Controller
 
     public function optimize(ListOptimizeRequest $request, ItensList $list, OptimizeListAction $action)
     {
-        if ($request->has('latitude') && $request->has('longitude')) {
-            $list->latitude = $request->latitude;
-            $list->longitude = $request->longitude;
-            $list->save();
-            $list->fresh();
+        $locationData = $request->safe()->only([
+            'latitude',
+            'longitude',
+            'distance',
+        ]);
+
+        if ($locationData !== []) {
+            $list->forceFill($locationData)->save();
+            $list->refresh();
         }
 
         $optimizedList = $action->execute($list->id);
