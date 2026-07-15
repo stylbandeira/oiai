@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Address;
+use App\Services\Geolocation\GeolocationService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Http;
@@ -27,63 +28,34 @@ class GeocodeScheduleJob implements ShouldQueue
      */
     public function handle()
     {
-        $items = Address::query()
+        $addresses = Address::query()
             ->whereNull('latitude')
             ->whereNull('longitude')
             ->where('geocode_status', 'pending')
             ->limit((int) $this->limit)
             ->get();
 
-        foreach ($items as $item) {
-            $address = collect([
-                $item->street,
-                $item->number,
-                $item->area,
-                $item->city,
-                $item->state,
-                $item->cep,
+        foreach ($addresses as $address) {
+            $full_address = collect([
+                $address->street,
+                $address->number,
+                $address->area,
+                $address->city,
+                $address->state,
+                $address->cep,
                 'Brasil',
             ])->filter()->implode(', ');
 
-            try {
-                $response = Http::withHeaders([
-                    'User-Agent' => 'SeuSistema/1.0 seu-email@dominio.com'
-                ])->get('https://nominatim.openstreetmap.org/search', [
-                    'q' => $address,
-                    'format' => 'json',
-                    'limit' => 1,
-                    'countrycodes' => 'br',
-                    'addressdetails' => 1,
-                ]);
+            $geolocation_service = new GeolocationService();
+            $address_data = $geolocation_service->search($full_address);
 
-                if ($response->successful() && count($response->json()) > 0) {
-                    $result = $response->json()[0];
-
-                    $item->update([
-                        'latitude' => $result['lat'],
-                        'longitude' => $result['lon'],
-                        'geocode_status' => 'done',
-                        'geocode_error' => null,
-                        'geocoded_at' => now(),
-                    ]);
-                } else {
-                    $item->update([
-                        'geocode_status' => 'not_found',
-                        'geocode_error' => 'Endereço não encontrado',
-                    ]);
-                }
-            } catch (\Throwable $e) {
-                $item->update([
-                    'geocode_status' => 'error',
-                    'geocode_error' => $e->getMessage(),
-                ]);
-            }
+            $address->update($address_data);
 
             sleep($this->sleepSeconds()); // respeita o limite do Nominatim público
         }
 
         Log::alert([
-            'Message' => count($items) . ' endereços cadastrados'
+            'Message' => count($addresses) . ' endereços processados'
         ]);
     }
 
