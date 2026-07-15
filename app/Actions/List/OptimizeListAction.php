@@ -5,7 +5,6 @@ namespace App\Actions\List;
 use App\Http\Resources\ClientProductResource;
 use App\Models\CompanyProducts;
 use App\Models\ItensList;
-use App\Models\ListProducts;
 use App\Repositories\CompanyProductsRepository;
 use App\Repositories\ListProductsRepository;
 use App\Repositories\ListRepository;
@@ -17,9 +16,9 @@ class OptimizeListAction
         private ListProductsRepository $listProductsRepository,
         private ListRepository $listRepository,
     ) {}
-    public function execute(ItensList $list)
+    public function execute(string $list_id)
     {
-        $list->load('products');
+        $list = ItensList::with('products')->find($list_id);
 
         $optimizedList = [];
 
@@ -28,8 +27,8 @@ class OptimizeListAction
         $cheapest = $companyProducts->groupBy('product_id')
             ->map(function ($items) {
                 return $items
-                    ->filter(fn ($item) => $item->average_price !== null && (float) $item->average_price > 0)
-                    ->sortBy(fn ($item) => (float) $item->average_price)
+                    ->filter(fn($item) => $item->average_price !== null && (float) $item->average_price > 0)
+                    ->sortBy(fn($item) => (float) $item->average_price)
                     ->first();
             })
             ->filter();
@@ -47,8 +46,6 @@ class OptimizeListAction
 
         $this->listRepository->update($list->id, ['optimized' => true]);
 
-        return response([
-            'list' => $optimizedList,
-        ]);
+        return $optimizedList;
     }
 }
