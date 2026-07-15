@@ -140,6 +140,58 @@ class ListOptimizeTest extends TestCase
         ]);
     }
 
+    public function test_company_within_maximum_distance_is_prioritized_even_when_more_expensive(): void
+    {
+        $user = User::factory()->client()->create();
+        $list = $this->createList($user);
+        $product = Product::factory()->create(['average_price' => 25]);
+        $this->createListProduct($list, $product, 1);
+
+        $nearCompany = $this->createCompanyAt(-8.057562, -34.877001);
+        $farCompany = $this->createCompanyAt(-10.047562, -34.877001);
+
+        $nearOffer = CompanyProducts::create([
+            'company_id' => $nearCompany->id,
+            'product_id' => $product->id,
+            'average_price' => 20,
+        ]);
+        $farOffer = CompanyProducts::create([
+            'company_id' => $farCompany->id,
+            'product_id' => $product->id,
+            'average_price' => 10,
+        ]);
+
+        $this->actingAs($user)
+            ->postJson('/api/lists/' . $list->id . '/optimize', [
+                'latitude' => -8.047562,
+                'longitude' => -34.877001,
+                'distance' => 100,
+            ])
+            ->assertOk();
+
+        $this->assertDatabaseHas('list_products', [
+            'list_id' => $list->id,
+            'product_id' => $product->id,
+            'company_product_id' => $nearOffer->id,
+        ]);
+        $this->assertDatabaseMissing('list_products', [
+            'list_id' => $list->id,
+            'product_id' => $product->id,
+            'company_product_id' => $farOffer->id,
+        ]);
+
+        $companies = array_values(
+            $this->actingAs($user)
+                ->getJson('/api/lists/' . $list->id)
+                ->assertOk()
+                ->json('list.companies')
+        );
+
+        $this->assertSame($nearCompany->id, $companies[0]['company']['id']);
+        $this->assertFalse($companies[0]['isTooFar']);
+        $this->assertEquals(20.0, $companies[0]['products'][0]['average_price']);
+    }
+
     public function test_calculates_and_optimizes_a_twenty_product_shopping_list(): void
     {
         Log::spy();
