@@ -21,6 +21,11 @@ return [
         'scheme' => 'https',
     ],
 
+    'nominatim' => [
+        'email' => env('APP_MAIL'),
+        'url' => env('NOMINATIM_URL', 'https://nominatim.openstreetmap.org/search')
+    ],
+
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
     ],
