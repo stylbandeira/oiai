@@ -292,6 +292,54 @@ class ListOptimizeTest extends TestCase
         ]);
     }
 
+    public function test_optimized_list_companies_are_ordered_from_nearest_to_farthest(): void
+    {
+        $user = User::factory()->client()->create();
+        $list = $this->createList($user);
+
+        $origin = [
+            'latitude' => -8.047562,
+            'longitude' => -34.877001,
+        ];
+
+        $farCompany = $this->createCompanyAt(-10.047562, -34.877001);
+        $nearCompany = $this->createCompanyAt(-8.057562, -34.877001);
+        $middleCompany = $this->createCompanyAt(-8.547562, -34.877001);
+
+        foreach ([$farCompany, $nearCompany, $middleCompany] as $company) {
+            $product = Product::factory()->create(['average_price' => 15]);
+            $this->createListProduct($list, $product, 1);
+
+            CompanyProducts::create([
+                'company_id' => $company->id,
+                'product_id' => $product->id,
+                'average_price' => 10,
+            ]);
+        }
+
+        $this->actingAs($user)
+            ->postJson('/api/lists/' . $list->id . '/optimize', $origin)
+            ->assertOk();
+
+        $companies = array_values(
+            $this->actingAs($user)
+                ->getJson('/api/lists/' . $list->id)
+                ->assertOk()
+                ->json('list.companies')
+        );
+
+        $this->assertSame(
+            [$nearCompany->id, $middleCompany->id, $farCompany->id],
+            array_column(array_column($companies, 'company'), 'id'),
+        );
+
+        $distances = array_column($companies, 'distance');
+
+        $this->assertCount(3, $distances);
+        $this->assertLessThan($distances[1], $distances[0]);
+        $this->assertLessThan($distances[2], $distances[1]);
+    }
+
     private function createList(User $user): ItensList
     {
         return ItensList::create([
@@ -328,5 +376,19 @@ class ListOptimizeTest extends TestCase
             'product_id' => $product->id,
             'average_price' => $price,
         ]);
+    }
+
+    private function createCompanyAt(float $latitude, float $longitude): Company
+    {
+        $address = Address::factory()->create([
+            'latitude' => $latitude,
+            'longitude' => $longitude,
+        ]);
+
+        $company = Company::factory()->create([
+            'address_id' => $address->id,
+        ]);
+
+        return $company;
     }
 }
