@@ -8,10 +8,15 @@ use App\Http\Resources\CompanyResource;
 use App\Http\Resources\ListProductResource;
 use App\Models\ItensList;
 use App\Repositories\ListRepository;
+use App\Services\Geolocation\GeolocationService;
+use Illuminate\Support\Facades\Log;
 
 class EloquentListDataAssembler implements ListDataAssembler
 {
-    public function __construct(private ListRepository $listRepository) {}
+    public function __construct(
+        private ListRepository $listRepository,
+        private GeolocationService $geolocation_service
+    ) {}
 
     public function assemble(ItensList $list): array
     {
@@ -43,15 +48,41 @@ class EloquentListDataAssembler implements ListDataAssembler
             }
 
             $company = $companyProduct->company;
+
+            $distance = $this->geolocation_service->between([
+                'latitude' => $company->address?->latitude ?? null,
+                'longitude' => $company->address?->longitude ?? null
+            ], [
+                'latitude' => $list->latitude,
+                'longitude' => $list->longitude
+            ]);
+
             $data['companies'][$company->id] ??= [
                 'company' => (new CompanyResource($company))->resolve(),
+                'distance' => $distance,
                 'products' => [],
             ];
+
             $data['companies'][$company->id]['products'][] = [
                 'product' => (new ClientProductResource($listProduct->product))->resolve(),
                 'average_price' => (float) $companyProduct->average_price,
             ];
         }
+
+        uasort(
+            $data['companies'],
+            function (array $a, array $b): int {
+                if ($a['distance'] === null) {
+                    return $b['distance'] === null ? 0 : 1;
+                }
+
+                if ($b['distance'] === null) {
+                    return -1;
+                }
+
+                return $a['distance'] <=> $b['distance'];
+            }
+        );
 
         return $data;
     }
