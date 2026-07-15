@@ -9,7 +9,6 @@ use App\Http\Resources\ListProductResource;
 use App\Models\ItensList;
 use App\Repositories\ListRepository;
 use App\Services\Geolocation\GeolocationService;
-use Illuminate\Support\Facades\Log;
 
 class EloquentListDataAssembler implements ListDataAssembler
 {
@@ -57,9 +56,13 @@ class EloquentListDataAssembler implements ListDataAssembler
                 'longitude' => $list->longitude
             ]);
 
+            $isTooFar = $list->distance !== null
+                && ($distance === null || $distance > (float) $list->distance);
+
             $data['companies'][$company->id] ??= [
                 'company' => (new CompanyResource($company))->resolve(),
                 'distance' => $distance,
+                'isTooFar' => $isTooFar,
                 'products' => [],
             ];
 
