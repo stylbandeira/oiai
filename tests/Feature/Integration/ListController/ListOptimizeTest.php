@@ -300,13 +300,15 @@ class ListOptimizeTest extends TestCase
         $origin = [
             'latitude' => -8.047562,
             'longitude' => -34.877001,
+            'distance' => 100,
         ];
 
         $farCompany = $this->createCompanyAt(-10.047562, -34.877001);
         $nearCompany = $this->createCompanyAt(-8.057562, -34.877001);
         $middleCompany = $this->createCompanyAt(-8.547562, -34.877001);
+        $companyWithoutCoordinates = Company::factory()->create();
 
-        foreach ([$farCompany, $nearCompany, $middleCompany] as $company) {
+        foreach ([$farCompany, $companyWithoutCoordinates, $nearCompany, $middleCompany] as $company) {
             $product = Product::factory()->create(['average_price' => 15]);
             $this->createListProduct($list, $product, 1);
 
@@ -329,15 +331,25 @@ class ListOptimizeTest extends TestCase
         );
 
         $this->assertSame(
-            [$nearCompany->id, $middleCompany->id, $farCompany->id],
+            [
+                $nearCompany->id,
+                $middleCompany->id,
+                $farCompany->id,
+                $companyWithoutCoordinates->id,
+            ],
             array_column(array_column($companies, 'company'), 'id'),
         );
 
         $distances = array_column($companies, 'distance');
 
-        $this->assertCount(3, $distances);
+        $this->assertCount(4, $distances);
         $this->assertLessThan($distances[1], $distances[0]);
         $this->assertLessThan($distances[2], $distances[1]);
+        $this->assertNull($distances[3]);
+        $this->assertSame(
+            [false, false, true, true],
+            array_column($companies, 'isTooFar'),
+        );
     }
 
     private function createList(User $user): ItensList
