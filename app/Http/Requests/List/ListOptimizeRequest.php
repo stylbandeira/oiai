@@ -21,12 +21,22 @@ class ListOptimizeRequest extends FormRequest
                 'numeric',
                 'between:-90,90',
                 'required_with:longitude',
+                'required_with:distance',
             ],
             'longitude' => [
                 'sometimes',
                 'numeric',
                 'between:-180,180',
                 'required_with:latitude',
+                'required_with:distance',
+            ],
+            'distance' => [
+                'sometimes',
+                'numeric',
+                'min:0',
+                'max:999.9999999',
+                'required_with:latitude',
+                'required_with:longitude',
             ],
         ];
     }
