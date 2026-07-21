@@ -138,11 +138,18 @@ class ProcessInvoiceJob implements ShouldQueue
                     );
 
                     try {
-                        $dataBruta = $invoice_data->dados_nota->data_emissao; // "24/03/2026 20:14:32-03:00"
+                        $dataBruta = $invoice_data->dados_nota->data_emissao;
 
-                        $purchase_date = Carbon::createFromFormat('d/m/Y H:i:sP', $dataBruta);
-                    } catch (\Exception $e) {
-                        Log::alert('ERRO: ' . $e->getMessage());
+                        $purchase_date = str_contains($dataBruta, '-03:00')
+                            ? Carbon::createFromFormat('d/m/Y H:i:sP', $dataBruta)
+                            : Carbon::createFromFormat('d/m/Y H:i:s', $dataBruta);
+                    } catch (\Throwable $exception) {
+                        Log::warning('Não foi possível interpretar a data da NFCe', [
+                            'data' => $dataBruta ?? null,
+                            'error' => $exception->getMessage(),
+                        ]);
+
+                        $purchase_date = Carbon::now();
                     }
 
                     $user_inserted_products[] = [
