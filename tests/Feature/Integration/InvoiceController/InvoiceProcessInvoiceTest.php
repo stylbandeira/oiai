@@ -93,11 +93,40 @@ class InvoiceProcessInvoiceTest extends TestCase
             ->assertStatus(400)
             ->assertJsonFragment([
                 'success' => false,
-                'message' => 'Erro ao tentar capturar dados da NFCe',
+                'message' => 'QR inválido',
                 'qr_data' => 'INVALID-QR',
             ]);
 
         $this->assertDatabaseCount('invoice', 0);
+    }
+
+    public function test_sp_nfce_access_key_uses_state_qr_code_route(): void
+    {
+        $client = User::factory()->client()->create();
+        $accessKey = '35260747508411094703651070005749261615098569';
+
+        $this->mock(NFCeScraperService::class, function ($mock) use ($accessKey) {
+            $mock->shouldReceive('scrapeFromQRCode')
+                ->once()
+                ->with($accessKey)
+                ->andReturn([
+                    'status' => 'success',
+                    'data' => [
+                        'chave_acesso' => $accessKey,
+                        'dados_nota' => ['data_emissao' => '20/07/2026 09:34:30'],
+                        'protocolo' => ['data_recebimento' => '20/07/2026 09:34:33'],
+                        'emitente' => [],
+                        'produtos' => [],
+                    ],
+                ]);
+        });
+
+        $response = $this->actingAs($client)
+            ->postJson('/api/invoice/process', ['invoice_code' => $accessKey]);
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('invoice.access_key', 'NFCe' . $accessKey);
     }
 
     public function invalidPayloadsProvider(): array
