@@ -5,80 +5,48 @@ namespace App\Actions\Invoice;
 use App\Http\Requests\Invoice\ProcessInvoiceRequest;
 use App\Models\Invoice;
 use App\Services\Invoice\InvoiceService;
-use App\Services\NFCeHtmlParserService;
 use App\Services\NFCeScraperService;
 use Carbon\Carbon;
 use DateTime;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class ProcessInvoiceAction
 {
     public function __construct(
         private NFCeScraperService $scraper,
+        private InvoiceService $invoiceService,
     ) {}
 
     public function execute(ProcessInvoiceRequest $request)
     {
         $user = Auth::user();
-        $receiptData = '';
-        $invoiceData = [];
-
         $qrData = $request->input('qr_code_data');
+        $accessKey = $request->invoice_code
+            ? $this->invoiceService->normalizeAccessKey($request->invoice_code)
+            : null;
+        $source = $accessKey ?? $qrData;
+        $result = $this->scraper->scrapeFromQRCode($source);
 
-        if ($request->invoice_code) {
-            $client = Http::timeout(120)
-                ->connectTimeout(20)
-                ->withHeaders([
-                    'User-Agent' => 'Mozilla/5.0',
-                    'Accept' => 'text/html,application/xhtml+xml,application/xml',
-                ]);
-
-            $client->get('https://dfe-portal.svrs.rs.gov.br/Dfe/ConsultaPublicaDfe');
-
-            $response = $client
-                ->asForm()
-                ->withHeaders([
-                    'Referer' => 'https://dfe-portal.svrs.rs.gov.br/Dfe/ConsultaPublicaDfe',
-                ])
-                ->post('https://dfe-portal.svrs.rs.gov.br/Dfe/ConsultaPublicaDfe', [
-                    'sistema' => 'Dfe',
-                    'EhConsultaPublicaSiteSefaz' => 'True',
-                    'Ambiente' => '1',
-                    'ChaveAcessoDfe' => $request->invoice_code,
-                ]);
-
-            if ($response->successful()) {
-                $scraper = new NFCeHtmlParserService();
-                $result = $scraper->parse($response);
-                $invoiceData = $result;
-                $receiptData = explode('-', $result['dados_nota']['data_emissao'])[0];
-
-                if ($result['dados_nota']['modelo'] == '') {
-                    $result = $this->scraper->scrapeFromQRCode($request->invoice_code);
-                }
-            } else {
-                return response([
-                    'error' => $response->body(),
-                    'message' => 'Não foi possível verificar a nota fiscal',
-                ], 400);
-            }
-        } else {
-            $result = $this->scraper->scrapeFromQRCode($qrData);
-
-            if ($result['status'] === 'error') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Erro ao tentar capturar dados da NFCe',
-                    'qr_data' => $qrData,
-                ], 400);
-            }
-
-            $invoiceData = $result['data'];
-            $receiptData = $invoiceData['protocolo']['data_recebimento'];
+        if (($result['status'] ?? 'error') === 'error') {
+            return response()->json([
+                'success' => false,
+                'message' => $result['error'] ?? 'Erro ao tentar capturar dados da NFCe',
+                'qr_data' => $source,
+            ], 400);
         }
 
-        $invoiceCode = ($request->invoice_code ? 'NFe' . $request->invoice_code : null) ?? $invoiceData['chave_acesso'];
+        Log::debug('Dados capturados da NFCe', [
+            'provider_type' => $result['tipo'] ?? null,
+            'url_consulta' => $result['url_consulta'] ?? null,
+            'data' => $result['data'] ?? [],
+        ]);
+
+        $invoiceData = $result['data'];
+        $receiptData = $invoiceData['protocolo']['data_recebimento']
+            ?? $invoiceData['dados_nota']['data_emissao']
+            ?? null;
+        $invoiceCode = ($accessKey ? 'NFCe' . $accessKey : null) ?? $invoiceData['chave_acesso'];
 
         $invoice = Invoice::firstOrCreate(
             [
