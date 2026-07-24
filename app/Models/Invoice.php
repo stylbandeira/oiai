@@ -8,7 +8,8 @@ class Invoice extends BaseModel
 {
     use HasFactory;
     const VALID_AREA_CODES = [
-        'PE' => '26'
+        'PE' => '26',
+        'SP' => '35',
     ];
 
     protected $table = 'invoice';
