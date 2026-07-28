@@ -66,18 +66,23 @@ class NFCeXMLParserService
      */
     private function extractDataFromXML(SimpleXMLElement $xml)
     {
-        // Registrar namespace
-        $xml->registerXPathNamespace('nfe', 'http://www.portalfiscal.inf.br/nfe');
-
-        // Acessar a NFe dentro do XML
-        $nfe = $xml->xpath('//nfe:NFe');
+        // A resposta da SEFAZ-PE envolve o nfeProc oficial em outro nfeProc.
+        // local-name() também suporta XMLs equivalentes que omitem ou alteram o
+        // prefixo do namespace sem deixar de localizar a NFe.
+        $nfe = $xml->xpath('//*[local-name()="NFe"]');
 
         if (empty($nfe)) {
             throw new Exception('Nó NFe não encontrado no XML');
         }
 
         $nfe = $nfe[0];
-        $infNFe = $nfe->infNFe;
+        $nfeNamespace = $nfe->getNamespaces(true)[''] ?? null;
+        $nfeChildren = $nfeNamespace ? $nfe->children($nfeNamespace) : $nfe;
+        $infNFe = $nfeChildren->infNFe[0];
+
+        if (!isset($infNFe)) {
+            throw new Exception('Nó infNFe não encontrado no XML');
+        }
 
         // Extrair dados
         $dados = [
@@ -88,7 +93,7 @@ class NFCeXMLParserService
             'pagamento' => $this->extractPagamento($infNFe),
             'total' => $this->extractTotal($infNFe),
             'informacoes_adicionais' => $this->extractInformacoesAdicionais($infNFe),
-            'chave_acesso' => (string) $infNFe['Id'],
+            'chave_acesso' => (string) $infNFe->attributes()['Id'],
             'protocolo' => $this->extractProtocolo($xml),
         ];
 
@@ -368,12 +373,14 @@ class NFCeXMLParserService
             'motivo' => '',
         ];
 
-        // Tentar pegar do protNFe
-        $prot = $xml->xpath('//nfe:protNFe');
+        // Tentar pegar do protNFe, inclusive no envelope específico da SEFAZ-PE.
+        $prot = $xml->xpath('//*[local-name()="protNFe"]');
 
         if (!empty($prot)) {
             $prot = $prot[0];
-            $infProt = $prot->infProt;
+            $protNamespace = $prot->getNamespaces(true)[''] ?? null;
+            $protChildren = $protNamespace ? $prot->children($protNamespace) : $prot;
+            $infProt = $protChildren->infProt;
 
             $protocolo['numero'] = (string) $infProt->nProt;
             $protocolo['data_recebimento'] = $this->formatDateTime((string) $infProt->dhRecbto);

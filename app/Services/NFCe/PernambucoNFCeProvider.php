@@ -6,12 +6,14 @@ use App\Contracts\NFCe\StateNFCeProvider;
 use App\Services\NFCeXMLParserService;
 use Exception;
 use GuzzleHttp\Client;
+use GuzzleHttp\Cookie\CookieJar;
 use Symfony\Component\DomCrawler\Crawler;
 use Illuminate\Support\Facades\Log;
 
 class PernambucoNFCeProvider implements StateNFCeProvider
 {
     private const BASE_URL = 'https://nfce.sefaz.pe.gov.br/nfce/consulta';
+    private const DFE_PORTAL_URL = 'https://dfe-portal.svrs.rs.gov.br/Dfe/ConsultaPublicaDfe';
 
     private $client;
     private $xmlParser;
@@ -88,7 +90,56 @@ class PernambucoNFCeProvider implements StateNFCeProvider
             return null;
         }
 
+        if (preg_match('/^\d{44}$/', $qrData)) {
+            return $this->resolveQRCodeFromAccessKey($qrData);
+        }
+
         return self::BASE_URL . '?p=' . rawurlencode($qrData);
+    }
+
+    private function resolveQRCodeFromAccessKey(string $accessKey): ?string
+    {
+        $cookies = new CookieJar();
+
+        $this->client->get(self::DFE_PORTAL_URL, [
+            'cookies' => $cookies,
+        ]);
+
+        $response = $this->client->post(self::DFE_PORTAL_URL, [
+            'cookies' => $cookies,
+            'headers' => [
+                'Referer' => self::DFE_PORTAL_URL,
+                'Content-Type' => 'application/x-www-form-urlencoded',
+            ],
+            'form_params' => [
+                'sistema' => 'Dfe',
+                'EhConsultaPublicaSiteSefaz' => 'True',
+                'Ambiente' => '1',
+                'ChaveAcessoDfe' => $accessKey,
+            ],
+        ]);
+
+        return $this->extractQRCodeUrlFromDfeHtml((string) $response->getBody(), $accessKey);
+    }
+
+    private function extractQRCodeUrlFromDfeHtml(string $html, string $accessKey): ?string
+    {
+        if (!preg_match(
+            '/<label>\s*QR-Code\s*<\/label>\s*<span[^>]*>\s*(https?:\/\/[^<\s]+)\s*<\/span>/iu',
+            $html,
+            $matches,
+        )) {
+            return null;
+        }
+
+        $url = html_entity_decode($matches[1], ENT_QUOTES | ENT_HTML5);
+        $host = strtolower(parse_url($url, PHP_URL_HOST) ?? '');
+
+        if ($host !== 'nfce.sefaz.pe.gov.br' || !str_contains($url, $accessKey . '|')) {
+            return null;
+        }
+
+        return preg_replace('/^http:/i', 'https:', $url);
     }
 
     public function scrapeFromQRCode(string $qrData): array
