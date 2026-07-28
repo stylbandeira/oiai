@@ -4,7 +4,10 @@ namespace Tests\Unit\Services;
 
 use App\Services\NFCe\SaoPauloNFCeProvider;
 use App\Services\NFCe\SantaCatarinaNFCeProvider;
+use App\Services\NFCe\PernambucoNFCeProvider;
 use App\Services\NFCeScraperService;
+use App\Services\NFCeXMLParserService;
+use ReflectionMethod;
 use Tests\TestCase;
 
 class NFCeScraperServiceTest extends TestCase
@@ -17,6 +20,25 @@ class NFCeScraperServiceTest extends TestCase
 
         $this->assertSame('error', $result['status']);
         $this->assertSame('Não existe provider cadastrado para a UF informada.', $result['error']);
+    }
+
+    public function test_extracts_pernambuco_qr_code_url_from_dfe_access_key_response(): void
+    {
+        $accessKey = '26260724333585000120650100003083781137031084';
+        $html = '<label>QR-Code</label><span style="word-break: break-all">'
+            .'http://nfce.sefaz.pe.gov.br/nfce-web/consultarNFCe?p='
+            .$accessKey.'|2|1|1|5DAD78B79B33A16C8A1E567BCD4B1ED0F994C193'
+            .'</span>';
+        $provider = new PernambucoNFCeProvider(new NFCeXMLParserService());
+        $extract = new ReflectionMethod($provider, 'extractQRCodeUrlFromDfeHtml');
+
+        $url = $extract->invoke($provider, $html, $accessKey);
+
+        $this->assertSame(
+            'https://nfce.sefaz.pe.gov.br/nfce-web/consultarNFCe?p='
+            .$accessKey.'|2|1|1|5DAD78B79B33A16C8A1E567BCD4B1ED0F994C193',
+            $url,
+        );
     }
 
     public function test_sao_paulo_provider_owns_detection_and_url_creation(): void
