@@ -15,8 +15,8 @@ class PernambucoNFCeProvider implements StateNFCeProvider
     private const BASE_URL = 'https://nfce.sefaz.pe.gov.br/nfce/consulta';
     private const DFE_PORTAL_URL = 'https://dfe-portal.svrs.rs.gov.br/Dfe/ConsultaPublicaDfe';
 
-    private $client;
-    private $xmlParser;
+    private Client $client;
+    private NFCeXMLParserService $xmlParser;
 
     public function __construct(NFCeXMLParserService $xmlParser)
     {
