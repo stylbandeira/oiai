@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Enums\ProductQuantitySource;
 use App\Models\Address;
 use App\Models\Company;
 use App\Models\CompanyProducts;
@@ -67,6 +68,13 @@ class ProcessInvoiceJob implements ShouldQueue
         $products_data = $invoice_data->produtos;
         $user = User::find($invoice->user_id);
 
+        Log::debug('Invoice data: ', [
+            'invoice_id' => $invoice->id,
+            'user_id' => $user->id,
+            'products_count' => count($products_data),
+            'invoice_data' => $invoice_data
+        ]);
+
         //FIRST OR CREATE DE COMPANY
         $company_data = $invoice_data->emitente;
         $company = Company::updateOrCreate(
@@ -107,13 +115,23 @@ class ProcessInvoiceJob implements ShouldQueue
                 ['sku' => $productData->codigo] :
                 ['ean' => $productData->ean];
 
+            $unity = $this->firstOrNewUnity($productData->unidade);
+            $quantitySource = ProductQuantitySource::DefaultExtraction;
+
             $insertedProduct = Product::updateOrCreate(
                 $insert,
                 [
                     'sku' => $productData->codigo,
                     'description' => $productData->descricao,
                     'name' => $productData->descricao,
-                    'unit_id' => $this->unities[strtolower($productData->unidade)]['id'] ?? 1,
+                    'raw_name' => $productData->descricao,
+                    'normalized_name' => $productData->descricao,
+                    'search_description' => $productData->descricao,
+                    'normalized_quantity' => ($productData->quantidade ?? 1) . ' ' . $productData->unidade,
+                    'quantity_source' => $quantitySource->value,
+                    'quantity_dimension' => $unity->dimension ?? 'unit',
+                    'quantity_confidence' => $quantitySource->confidence(),
+                    'unit_id' => $unity->id,
                     'quantity' => 1,
                     'created_by' => $user->id
                 ],
@@ -196,5 +214,20 @@ class ProcessInvoiceJob implements ShouldQueue
     public function failed(\Throwable $exception): void
     {
         Log::error('Falha ao processar pedido: ' . $exception->getMessage(), $this->not_inserted_products);
+    }
+
+    private function firstOrNewUnity(string $abbreviation): Unity
+    {
+        $abbreviation = strtolower(trim($abbreviation));
+        $unity = Unity::where('abbreviation', $abbreviation)->first();
+
+        if (!$unity) {
+            $unity = new Unity();
+            $unity->abbreviation = $abbreviation;
+            $unity->name = $abbreviation;
+            $unity->save();
+        }
+
+        return $unity;
     }
 }
