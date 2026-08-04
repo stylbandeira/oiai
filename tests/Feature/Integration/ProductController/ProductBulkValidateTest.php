@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Integration\ProductController;
 
+use App\Enums\ProductQuantitySource;
+use App\Enums\ProductRefinementStatus;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -63,6 +65,9 @@ class ProductBulkValidateTest extends TestCase
             'id' => $firstProduct->id,
             'validated' => true,
             'validated_by' => $admin->id,
+            'refined' => ProductRefinementStatus::AdminValidated->value,
+            'quantity_source' => ProductQuantitySource::AdminValidated->value,
+            'quantity_confidence' => ProductQuantitySource::AdminValidated->confidence(),
         ]);
         $this->assertDatabaseHas('products', [
             'id' => $secondProduct->id,
