@@ -19,6 +19,9 @@ class UnityFactory extends Factory
         return [
             'abbreviation' => fake()->word(),
             'name' => fake()->word(),
+            'dimension' => fake()->randomElement(['mass', 'volume', 'unit']),
+            'convertion_factor' => fake()->randomElement([1, 10, 100, 1000]),
+            'base_unity_id' => null,
         ];
     }
 }
