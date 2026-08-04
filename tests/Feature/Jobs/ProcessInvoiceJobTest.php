@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Jobs;
 
+use App\Enums\ProductQuantitySource;
 use App\Jobs\ProcessInvoiceJob;
 use App\Models\Company;
 use App\Models\CompanyProducts;
@@ -79,5 +80,58 @@ class ProcessInvoiceJobTest extends TestCase
             'company_product_id' => $companyProduct->id,
             'price' => 25.99,
         ]);
+    }
+
+    public function test_invoice_product_uses_registered_unity_dimension_and_default_extraction_confidence(): void
+    {
+        $user = User::factory()->client()->create();
+        $unity = Unity::factory()->create([
+            'abbreviation' => 'kg',
+            'name' => 'quilograma',
+            'dimension' => 'mass',
+            'convertion_factor' => 1000,
+        ]);
+        $invoice = Invoice::create([
+            'user_id' => $user->id,
+            'access_key' => 'invoice-product-quantity-metadata-test',
+            'receipt_data' => now()->toDateString(),
+            'invoice_data' => json_encode([
+                'emitente' => [
+                    'cnpj' => '24333585000120',
+                    'ie' => '014687747',
+                    'razao_social' => 'Mercado Teste',
+                    'endereco' => 'Rua Teste',
+                    'numero' => '100',
+                    'bairro' => 'Centro',
+                    'municipio' => 'Petrolina',
+                    'uf' => 'PE',
+                    'cep' => '56300000',
+                ],
+                'produtos' => [[
+                    'ean' => '7891234567890',
+                    'codigo' => 'PRODUTO-KG',
+                    'descricao' => 'Produto vendido por peso',
+                    'unidade' => 'KG',
+                    'quantidade' => 2.5,
+                    'valor_unitario' => 10.00,
+                ]],
+                'dados_nota' => [
+                    'data_emissao' => now()->format('d/m/Y H:i:sP'),
+                ],
+            ]),
+            'pending' => true,
+        ]);
+
+        $notificationService = Mockery::mock(NotificationService::class);
+        $notificationService->shouldReceive('createProductInsertionEvent')->once();
+
+        (new ProcessInvoiceJob($notificationService))->processInvoice($invoice);
+
+        $product = Product::where('ean', '7891234567890')->firstOrFail();
+        $this->assertSame($unity->id, $product->unit_id);
+        $this->assertSame($unity->dimension, $product->quantity_dimension);
+        $this->assertSame(ProductQuantitySource::DefaultExtraction, $product->quantity_source);
+        $this->assertSame('default_extraction', $product->getRawOriginal('quantity_source'));
+        $this->assertSame(0.90, $product->quantity_confidence);
     }
 }
