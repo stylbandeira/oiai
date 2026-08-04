@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\ProductQuantitySource;
+use App\Enums\ProductRefinementStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -28,6 +30,7 @@ class Product extends BaseModel
         'average_price',
         'category_id',
         'ean',
+        'ncm',
         'description',
         'validated',
         'validated_by',
@@ -43,6 +46,9 @@ class Product extends BaseModel
 
     protected $casts = [
         'average_price' => 'float',
+        'quantity_confidence' => 'float',
+        'quantity_source' => ProductQuantitySource::class,
+        'refined' => ProductRefinementStatus::class,
     ];
 
     public function companies()
@@ -64,6 +70,11 @@ class Product extends BaseModel
     public function unity()
     {
         return $this->belongsTo(Unity::class, 'unit_id');
+    }
+
+    public function providerAttempts()
+    {
+        return $this->hasMany(ProductDataProviderAttempt::class);
     }
 
     public function userFavorites()
