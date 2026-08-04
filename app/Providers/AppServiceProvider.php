@@ -10,6 +10,9 @@ use App\Services\NFCe\SantaCatarinaNFCeProvider;
 use App\Services\NFCe\SaoPauloNFCeProvider;
 use App\Services\NFCeScraperService;
 use App\Services\NFCeXMLParserService;
+use App\Services\Product\ProductDataService;
+use App\Services\Product\Providers\CosmosProductDataProvider;
+use App\Services\Product\Providers\OscbrProductDataProvider;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -25,6 +28,13 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton(ExportService::class, function () {
             return new ExportService();
+        });
+
+        $this->app->bind(ProductDataService::class, function ($app) {
+            return new ProductDataService([
+                $app->make(CosmosProductDataProvider::class),
+                $app->make(OscbrProductDataProvider::class),
+            ]);
         });
 
         $this->app->singleton(NFCeXMLParserService::class, function ($app) {

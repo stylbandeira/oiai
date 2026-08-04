@@ -43,8 +43,9 @@ class Kernel extends ConsoleKernel
                 Log::error(' ## JOB FAILED - GeocodeScheduleJob ##');
             });
 
-        $schedule->job(app(ProductDataSearchJob::class))
-            ->everySixHours()
+        $schedule->job(new ProductDataSearchJob())
+            ->everyFiveMinutes()
+            ->withoutOverlapping()
             ->onFailure(function () {
                 Log::error(' ## JOB FAILED - ProductDataSearchJob ##');
             });

@@ -2,56 +2,224 @@
 
 namespace App\Services\Product;
 
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
+use App\Contracts\Product\ProductDataProvider;
+use App\Enums\ProductRefinementStatus;
+use Illuminate\Support\Facades\Cache;
 
 class ProductDataService
 {
-    protected string $accessKey;
-    protected string $url;
+    private array $runUsage = [];
+    private array $unavailableProviders = [];
 
-    public function __construct()
+    /** @param iterable<ProductDataProvider> $providers */
+    public function __construct(private iterable $providers)
     {
-        $this->accessKey = env('COSMOS_API_TOKEN');
-        $this->url = env('COSMOS_API_URL');
     }
 
-    /**
-     * Recupera detalhes do produto atráves do GTIN/EAN informado.
-     */
-    public function getProductData(string $ean)
+    public function startRun(): void
     {
-        $productData = [];
-        $url = $this->url . '/gtins/' . $ean . 'json';
-        $agent = 'Cosmos-API-Request';
-        $headers = array(
-            "Content-Type: application/json",
-            "X-Cosmos-Token: wS3W6JJz4WF8DmBFAGRHMw"
-        );
+        $this->runUsage = [];
+        $this->unavailableProviders = [];
+    }
 
-        $curl = curl_init($url);
-        curl_setopt($curl, CURLOPT_USERAGENT, $agent);
-        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($curl, CURLOPT_FAILONERROR, true);
+    public function getProductData(string $ean, array $excludedProviders = []): array
+    {
+        return $this->requestProviders($ean, $this->providers, $excludedProviders);
+    }
 
-        $data = curl_exec($curl);
-        if ($data === false || $data == NULL) {
-            var_dump(curl_error($curl));
-            return [];
-        } else {
-            $object = json_decode($data);
-            Log::info((array)$object);
+    public function getSupplementalProductData(
+        string $ean,
+        ProductRefinementStatus $currentStatus,
+        array $excludedProviders = [],
+    ): array {
+        $currentProviderReached = false;
+        $providers = [];
 
-            $productData['name'] = $object->description ?? '';
-            $productData['image_url'] = $object->gtins->barcode_image ?? $object->thumbnail ?? '';
-            $productData['category'] = $object->category->description ?? '';
+        foreach ($this->providers as $provider) {
+            if ($provider->refinementStatus() === $currentStatus) {
+                $currentProviderReached = true;
+                continue;
+            }
 
-            return $productData;
+            if (! $currentProviderReached) {
+                continue;
+            }
+
+            $providers[] = $provider;
         }
 
-        curl_close($curl);
+        return $this->requestProviders($ean, $providers, $excludedProviders);
+    }
+
+    public function getUpgradeProductData(
+        string $ean,
+        ProductRefinementStatus $currentStatus,
+        array $excludedProviders = [],
+    ): array {
+        $providers = [];
+
+        foreach ($this->providers as $provider) {
+            if ($provider->refinementStatus() === $currentStatus) {
+                break;
+            }
+
+            $providers[] = $provider;
+        }
+
+        return $this->requestProviders($ean, $providers, $excludedProviders);
+    }
+
+    public function hasAvailableProvider(
+        ProductRefinementStatus $currentStatus,
+        array $excludedProviders = [],
+    ): bool {
+        foreach ($this->applicableProviders($currentStatus) as $provider) {
+            if (! in_array($provider->key(), $excludedProviders, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function maximumProductsPerRun(): int
+    {
+        $total = 0;
+
+        foreach ($this->providers as $provider) {
+            $total += $provider->batchSize();
+        }
+
+        return $total;
+    }
+
+    private function requestProvider(ProductDataProvider $provider, string $ean): array
+    {
+        if (! $this->reserveUsage($provider)) {
+            return [];
+        }
+
+        return $provider->getProductData($ean);
+    }
+
+    private function requestProviders(string $ean, iterable $providers, array $excludedProviders): array
+    {
+        $attempts = [];
+
+        foreach ($providers as $provider) {
+            if (in_array($provider->key(), $excludedProviders, true)) {
+                continue;
+            }
+
+            $data = $this->requestProvider($provider, $ean);
+
+            if ($data === []) {
+                continue;
+            }
+
+            $lookup = $data['_lookup'] ?? null;
+            unset($data['_lookup']);
+
+            if (is_array($lookup)) {
+                $lookup['provider'] = $provider->key();
+                $attempts[] = $lookup;
+            }
+
+            if (($lookup['status'] ?? null) === 'not_found') {
+                continue;
+            }
+
+            if ($data !== []) {
+                $data['_provider_attempts'] = $attempts;
+
+                return $data;
+            }
+        }
+
+        return $attempts === [] ? [] : ['_provider_attempts' => $attempts];
+    }
+
+    /** @return array<ProductDataProvider> */
+    private function applicableProviders(ProductRefinementStatus $currentStatus): array
+    {
+        $providers = is_array($this->providers)
+            ? $this->providers
+            : iterator_to_array($this->providers);
+
+        if ($currentStatus === ProductRefinementStatus::Unrefined) {
+            return $providers;
+        }
+
+        $currentIndex = null;
+
+        foreach ($providers as $index => $provider) {
+            if ($provider->refinementStatus() === $currentStatus) {
+                $currentIndex = $index;
+                break;
+            }
+        }
+
+        if ($currentIndex === null) {
+            return [];
+        }
+
+        if ($currentStatus === ProductRefinementStatus::CosmosValidated) {
+            return array_slice($providers, $currentIndex + 1);
+        }
+
+        return array_slice($providers, 0, $currentIndex);
+    }
+
+    private function reserveUsage(ProductDataProvider $provider): bool
+    {
+        $providerKey = $provider->key();
+
+        if (
+            isset($this->unavailableProviders[$providerKey])
+            || ($this->runUsage[$providerKey] ?? 0) >= $provider->batchSize()
+        ) {
+            return false;
+        }
+
+        $date = now()->format('Y-m-d');
+        $dailyKey = "product-data:{$providerKey}:daily:{$date}";
+        $lastRunKey = "product-data:{$providerKey}:last-run";
+        $lock = Cache::lock("product-data:{$providerKey}:usage-lock", 10);
+
+        $reserved = $lock->block(2, function () use ($provider, $dailyKey, $lastRunKey) {
+            $dailyUsage = (int) Cache::get($dailyKey, 0);
+
+            if ($dailyUsage >= $provider->dailyLimit()) {
+                return false;
+            }
+
+            if (($this->runUsage[$provider->key()] ?? 0) === 0) {
+                $lastRun = Cache::get($lastRunKey);
+
+                if (
+                    $lastRun !== null
+                    && \Carbon\Carbon::createFromTimestamp((int) $lastRun)
+                        ->diffInMinutes(now(), true) < $provider->recurrenceMinutes()
+                ) {
+                    return false;
+                }
+
+                Cache::put($lastRunKey, now()->timestamp, now()->endOfDay());
+            }
+
+            Cache::put($dailyKey, $dailyUsage + 1, now()->endOfDay());
+
+            return true;
+        });
+
+        if (! $reserved) {
+            $this->unavailableProviders[$providerKey] = true;
+
+            return false;
+        }
+
+        $this->runUsage[$providerKey] = ($this->runUsage[$providerKey] ?? 0) + 1;
+
+        return true;
     }
 }

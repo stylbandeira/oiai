@@ -11,6 +11,14 @@ class Unity extends BaseModel
 
     protected $table = 'unities';
 
+    protected $fillable = [
+        'name',
+        'abbreviation',
+        'dimension',
+        'convertion_factor',
+        'base_unity_id'
+    ];
+
     public function name(): Attribute
     {
         return Attribute::make(
