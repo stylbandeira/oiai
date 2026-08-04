@@ -2,6 +2,8 @@
 
 namespace App\Repositories;
 
+use App\Enums\ProductQuantitySource;
+use App\Enums\ProductRefinementStatus;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
@@ -91,6 +93,9 @@ class ProductRepository
                 ->update([
                     'validated' => true,
                     'validated_by' => $userId,
+                    'refined' => ProductRefinementStatus::AdminValidated->value,
+                    'quantity_source' => ProductQuantitySource::AdminValidated->value,
+                    'quantity_confidence' => ProductQuantitySource::AdminValidated->confidence(),
                 ]);
             $validatedProducts = Product::whereIn('id', $productIds)->get();
         } catch (\Throwable $th) {
