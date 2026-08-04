@@ -10,16 +10,16 @@ use Illuminate\Support\Str;
 
 class ImageFromUrl
 {
-    public function saveImageFromUrl(string $url): string
+    public function saveImageFromUrl(string $url, array $headers = []): string
     {
         if (blank($url) || ! filter_var($url, FILTER_VALIDATE_URL)) {
             throw new Exception('URL da imagem inválida.');
         }
 
-        $response = Http::withHeaders([
+        $response = Http::withHeaders(array_merge([
             'User-Agent' => 'Mozilla/5.0 (Laravel Image Downloader)',
             'Accept' => 'image/*,*/*',
-        ])
+        ], $headers))
             ->timeout(20)
             ->get($url);
 
@@ -28,7 +28,7 @@ class ImageFromUrl
                 'message' => 'Não foi possível baixar a imagem.',
                 'url' => $url,
                 'status' => $response->status(),
-                'body' => $response->body(),
+                'body' => Str::limit($response->body(), 500),
             ]);
 
             throw new Exception('Não foi possível baixar a imagem.');
